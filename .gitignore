@@ -1,2 +1,4 @@
 logs
 config.py
+__pycache__
+ultimo_indice.txt
