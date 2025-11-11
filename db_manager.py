@@ -63,13 +63,19 @@ def fetch_dados_vendas_para_produtos(DB_CONFIG):
     logging.info("1. Buscando produtos mais vendidos por valor")
     sql_valor = """
         SELECT 
-            v.codigo_interno_produto, v.GTIN, v.descricao_produto, 
-            v.apresentacao_produto, v.nome_fantasia_fabricante,
+            v.codigo_interno_produto, 
+            v.GTIN, 
+            v.descricao_produto, 
+            v.apresentacao_produto, 
+            v.nome_fantasia_fabricante,
             SUM(v.valor_liquido_total) AS valor_total
-        FROM bronze_plugpharma_vendas v
-        WHERE v.data_venda >= CURDATE() - INTERVAL 90 DAY
-        GROUP BY v.codigo_interno_produto, v.GTIN, v.descricao_produto, 
-                 v.apresentacao_produto, v.nome_fantasia_fabricante
+        FROM 
+            bronze_plugpharma_vendas v
+        WHERE 
+            v.data_venda >= CURDATE() - INTERVAL 90 DAY
+        GROUP BY 
+            v.codigo_interno_produto, v.GTIN, v.descricao_produto, 
+            v.apresentacao_produto, v.nome_fantasia_fabricante
         ORDER BY valor_total DESC
         LIMIT 2000;
     """
@@ -82,13 +88,19 @@ def fetch_dados_vendas_para_produtos(DB_CONFIG):
     logging.info("2. Buscando produtos mais vendidos por quantidade")
     sql_qtd = """
         SELECT 
-            v.codigo_interno_produto, v.GTIN, v.descricao_produto, 
-            v.apresentacao_produto, v.nome_fantasia_fabricante,
+            v.codigo_interno_produto, 
+            v.GTIN, 
+            v.descricao_produto, 
+            v.apresentacao_produto, 
+            v.nome_fantasia_fabricante,
             SUM(v.qtd_de_produtos) AS qtd_total
-        FROM bronze_plugpharma_vendas v
-        WHERE v.data_venda >= CURDATE() - INTERVAL 90 DAY
-        GROUP BY v.codigo_interno_produto, v.GTIN, v.descricao_produto, 
-                 v.apresentacao_produto, v.nome_fantasia_fabricante
+        FROM 
+            bronze_plugpharma_vendas v
+        WHERE 
+            v.data_venda >= CURDATE() - INTERVAL 90 DAY
+        GROUP BY 
+            v.codigo_interno_produto, v.GTIN, v.descricao_produto, 
+            v.apresentacao_produto, v.nome_fantasia_fabricante
         ORDER BY qtd_total DESC
         LIMIT 2000;
     """
@@ -133,10 +145,10 @@ def insert_produtos_atualizados(DB_CONFIG, produtos_df):
     for index, row_data in produtos_df.iterrows():
         try:
             # CORREÇÃO DE NORMALIZAÇÃO DE GTIN E ORDEM DE TUPLA
-            gtin_normalizado = str(row_data["GTIN"]).zfill(14)
+            #gtin_normalizado = str(row_data["GTIN"]).zfill(14)
             
             data_produto = (
-                gtin_normalizado,                     # 1. gtin
+                row_data["GTIN"],                     # 1. gtin
                 row_data["codigo_interno_produto"],   # 2. id_produto
                 row_data["descricao_produto"],        # 3. descricao
                 row_data["nome_fantasia_fabricante"], # 4. fabricante
