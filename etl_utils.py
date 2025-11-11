@@ -73,6 +73,7 @@ def transformar_dados_produtos(produtos_por_valor, produtos_por_qtd):
     # Filtra GTINs inválidos ANTES de normalizar
     Produtos = Produtos[Produtos["GTIN"] != "99999999999999"]
     Produtos = Produtos[Produtos["GTIN"] != "88888888888888"]
+    Produtos = Produtos[Produtos["GTIN"] != "78000001"] # ENTREGA MOTOBOY
     
     # --- LÓGICA DE LIMPEZA CORRIGIDA ---
     

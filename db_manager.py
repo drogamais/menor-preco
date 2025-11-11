@@ -140,7 +140,7 @@ def insert_produtos_atualizados(DB_CONFIG, produtos_df):
     """
     
     erros = 0
-    for row_data in produtos_df.iterrows():
+    for index, row_data in produtos_df.iterrows():
         try:
             
             data_produto = (
@@ -195,6 +195,56 @@ def coletar_produtos_no_banco(DB_CONFIG):
 
     EANs = pd.DataFrame(gtins, columns=["gtin"])
     return EANs
+
+def fetch_gtins_principais(DB_CONFIG, codigos_internos_list):
+    """
+    Busca os GTINs principais (codigo_principal = 1) para uma lista
+    de codigos_internos_produto da tabela bronze_plugpharma_produtos.
+    """
+    if not codigos_internos_list:
+        logging.info("Nenhum codigo_interno_produto fornecido para buscar GTINs principais.")
+        return pd.DataFrame(columns=["codigo_interno_produto", "GTIN_principal"])
+
+    logging.info(f"Buscando GTIN principal para {len(codigos_internos_list)} códigos internos...")
+    
+    conn = _conectar_db(DB_CONFIG)
+    cursor = conn.cursor()
+
+    try:
+        # Cria a string de placeholders (%s, %s, ...)
+        placeholders = ', '.join(['%s'] * len(codigos_internos_list))
+        
+        sql = f"""
+            SELECT 
+                codigo_interno, 
+                codigo_barras 
+            FROM 
+                bronze_plugpharma_produtos 
+            WHERE 
+                codigo_principal = 1 
+                AND codigo_interno IN ({placeholders})
+        """
+        
+        # Executa a query com a tupla de códigos
+        cursor.execute(sql, tuple(codigos_internos_list))
+        resultados = cursor.fetchall()
+        
+        columns = [desc[0] for desc in cursor.description]
+        df_gtins_principais = pd.DataFrame(resultados, columns=columns)
+        
+        # Renomeia para clareza no merge (usando 'codigo_barras' como origem)
+        df_gtins_principais.rename(columns={'codigo_barras': 'GTIN_principal', 'codigo_interno': 'codigo_interno_produto'}, inplace=True)
+        
+        logging.info(f"Encontrados {len(df_gtins_principais)} GTINs principais.")
+        return df_gtins_principais
+
+    except Exception as e:
+        logging.error(f"Erro ao buscar GTINs principais: {e}", exc_info=True)
+        # Retorna um DF vazio em caso de erro
+        return pd.DataFrame(columns=["codigo_interno_produto", "GTIN_principal"])
+    finally:
+        cursor.close()
+        conn.close()
 
 # ============================================
 # SEÇÃO DE LOJAS E GEOHASH
