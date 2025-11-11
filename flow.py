@@ -19,6 +19,7 @@ from etl_utils import (
 def run_recovery_flow(configs, now_gmt3):
     """
     Executa a lógica de recuperação de dados parciais (CSV).
+    (Esta função já está correta, pois ela só carrega dados)
     """
     print("##### ⚠️ DADOS PARCIAIS .CSV ENCONTRADOS. TENTANDO CARREGAR... #####")
     logging.warning("##### DADOS PARCIAIS .CSV ENCONTRADOS. TENTANDO CARREGAR... #####")
@@ -82,14 +83,13 @@ def run_recovery_flow(configs, now_gmt3):
 
 def run_normal_flow(configs, now_gmt3, today_gmt3):
     """
-    Executa o fluxo normal de ETL (sem recuperação).
-    Retorna os dados coletados e o estado da execução.
+    Executa o fluxo normal de ETL (Extração e Transformação).
+    A Carga (Load) foi movida para o main.py.
     """
     print("##### NENHUM DADO PARCIAL ENCONTRADO. INICIANDO COLETA NORMAL... #####")
     
     # Desempacota configs
     DB_CONFIG = configs['DB_CONFIG']
-    GOOGLE_API_KEY = configs['GOOGLE_API_KEY']
     TELEGRAM_TOKEN = configs['TELEGRAM_TOKEN']
     TELEGRAM_CHAT_ID = configs['TELEGRAM_CHAT_ID']
     arquivo_indice = configs['arquivo_indice']
@@ -132,24 +132,8 @@ def run_normal_flow(configs, now_gmt3, today_gmt3):
         TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
     )
     
-    # --- PASSO 2: TENTATIVA DE CARGA (SÓ DOS DADOS DA API) ---
+    # --- MUDANÇA: REMOVIDA A ETAPA DE CARGA (VIII e IX) ---
+    # Os DataFrames agora são apenas retornados
     
-    ### VIII Carga de Novas Lojas
-    if not Lojas_SC_geral.empty:
-        Lojas_SC_geral_sem_duplicatas = Lojas_SC_geral.drop_duplicates(subset=["id_loja"]).reset_index(drop=True)
-        print(f"##### 💾 SALVANDO {len(Lojas_SC_geral_sem_duplicatas)} LOJAS (TOTAIS OU PARCIAIS)... #####")
-        Lojas_SC_com_latlon = buscar_lat_lon_lojas_sc(Lojas_SC_geral_sem_duplicatas, GOOGLE_API_KEY)
-        inserir_lojas_sc(Lojas_SC_com_latlon, now_gmt3, DB_CONFIG)
-    else:
-        print("##### NENHUMA LOJA NOVA ENCONTRADA PARA CARGA. #####")
-
-    ### IX Carga das Notas Fiscais:
-    if not Notas_geral.empty:
-        Notas_geral_sem_duplicatas = Notas_geral.drop_duplicates(subset=["id_nota"]).reset_index(drop=True)
-        print(f"##### 💾 SALVANDO {len(Notas_geral_sem_duplicatas)} NOTAS (TOTAIS OU PARCIAIS)... #####")
-        inserir_notas(Notas_geral_sem_duplicatas, now_gmt3, DB_CONFIG)
-    else:
-        print("##### NENHUMA NOTA NOVA ENCONTRADA PARA CARGA. #####")
-
     # Retorna o estado da execução para o 'main' decidir o que fazer
     return Notas_geral, Lojas_SC_geral, run_completo, indice_para_salvar

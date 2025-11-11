@@ -134,13 +134,16 @@ def insert_produtos_atualizados(DB_CONFIG, produtos_df):
             gtin, id_produto, descricao, fabricante, apresentacao
         )
         VALUES (%s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            id_produto = VALUES(id_produto),
+            descricao = VALUES(descricao),
+            fabricante = VALUES(fabricante),
+            apresentacao = VALUES(apresentacao);
     """
     
     erros = 0
-    for index, row_data in produtos_df.iterrows():
+    for row_data in produtos_df.iterrows():
         try:
-            # CORREÇÃO DE NORMALIZAÇÃO DE GTIN E ORDEM DE TUPLA
-            #gtin_normalizado = str(row_data["GTIN"]).zfill(14)
             
             data_produto = (
                 row_data["GTIN"],                     # 1. gtin
