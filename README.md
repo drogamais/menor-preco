@@ -113,6 +113,18 @@ Abra o <code>config.py</code> e preencha as variáveis com suas credenciais:
 </details>
 
 <details> 
+    <summary><strong>4. 🏗️ Inicialização do Banco (Primeira Execução)</strong></summary>
+Antes de executar o pipeline principal pela primeira vez, você precisa garantir que as tabelas de destino existam. O script init_db.py faz isso para você.
+
+```bash
+python init_db.py
+```
+
+Este script irá criar as tabelas bronze_menorPreco_produtos, bronze_menorPreco_lojas e bronze_menorPreco_notas com o esquema e collate corretos, caso elas ainda não existam.
+
+</details>
+
+<details> 
     <summary><strong>4. ▶️ Execução</strong></summary>
 
 Uma vez configurado, basta executar o <code>main.py</code>:
