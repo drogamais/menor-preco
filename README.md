@@ -1,26 +1,49 @@
-# MP Feeder (v1.30)
+# 🛍️ MP Feeder (v1.30) 🛒
 
 Algoritmo em Python para a captação de notas fiscais da plataforma Menor Preço (Nota Paraná) e inserção em um banco de dados MariaDB.
 
 O script foi desenvolvido para coletar dados de preços de concorrentes com base em uma lista de produtos (GTINs) e geolocalizações (Geohashs) pré-definidas.
 
-## O que este projeto faz (Principais Funcionalidades)
+## 🧭 Sumário
+
+* [Principais Funcionalidades](#-principais-funcionalidades)
+* [Como Usar](#-como-usar)
+* [Fluxo de Execução](#-fluxo-de-execução)
+* [Estrutura do Projeto](#-estrutura-do-projeto)
+
+## 🎯 Resumo do Projeto
+
+Este é um pipeline de ETL robusto e tolerante a falhas projetado para:
+
+*   Coletar dados de preços da API do Menor Preço (Nota Paraná).
+
+*   Enriquecer os dados com geocodificação de lojas (Google API) e notificações (Telegram).
+
+*   Carregar os dados em um banco MariaDB, com lógica de recuperação automática em caso de falha.
+
+## ✨ Principais Funcionalidades
 
 Este projeto é um pipeline de ETL (Extração, Transformação e Carga) completo e resiliente.
 
-* **Atualização Inteligente de Produtos:** Periodicamente (a cada 30+ dias), o script reconstrói a lista de 1000 produtos-alvo (`bronze_menorPreco_produtos`). Ele cruza os 2000 produtos mais vendidos por *valor* e *quantidade* da `bronze_plugpharma_vendas` e, em seguida, busca o **GTIN principal** (`codigo_principal = 1`) para cada um na `bronze_plugpharma_produtos`.
-* **Coleta Rotativa (Batch):** O script não consulta os 1000 produtos de uma vez. Ele divide a lista em lotes de 100 GTINs e processa um lote por execução, continuando de onde parou na execução anterior (lógica gerenciada pelo `ultimo_indice.txt` e `pegar_ultimo_gtin`).
-* **Coleta Ampla de Dados:** Utiliza os GTINs do lote como "isca" na API do Menor Preço. No entanto, ele salva *todos* os produtos que a API retorna na nota fiscal, não apenas o produto-isca. Isso enriquece a tabela `bronze_menorPreco_notas` com uma vasta gama de produtos concorrentes.
-* **Geocodificação de Novas Lojas:** Ao encontrar uma loja (`id_loja`) não cadastrada na `bronze_menorPreco_lojas`, o script utiliza a API do Google Geocoding para buscar suas coordenadas de latitude e longitude antes de salvá-la.
-* **Tolerância a Falhas (Banco de Dados):** Se a inserção final no banco de dados falhar (ex: perda de conexão), o `handle_execution_error` é acionado. Ele salva *todos* os dados coletados (notas e lojas) em arquivos `.csv` locais (`notas_parciais.csv`, `lojas_parciais.csv`).
-* **Recuperação Automática:** Na próxima execução, o `main.py` detecta esses arquivos `.csv`. Ele primeiro executa o `run_recovery_flow`, que carrega os dados desses CSVs no banco de dados e depois os apaga, garantindo que nenhum dado seja perdido antes de iniciar uma nova coleta.
-* **Monitoramento e Notificações:** Envia mensagens de sucesso ou erro para um chat do Telegram, permitindo o monitoramento remoto da execução.
+* 🧠 **Atualização Inteligente de Produtos:** Periodicamente (a cada 30+ dias), o script reconstrói a lista de 1000 produtos-alvo (`bronze_menorPreco_produtos`). Ele cruza os 2000 produtos mais vendidos por *valor* e *quantidade* da `bronze_plugpharma_vendas` e, em seguida, busca o **GTIN principal** (`codigo_principal = 1`) para cada um na `bronze_plugpharma_produtos`.
+
+* 🔄 **Coleta Rotativa (Batch):** O script não consulta os 1000 produtos de uma vez. Ele divide a lista em lotes de 100 GTINs e processa um lote por execução, continuando de onde parou na execução anterior (lógica gerenciada pelo `ultimo_indice.txt` e `pegar_ultimo_gtin`).
+
+* 🎣 **Coleta Ampla de Dados:** Utiliza os GTINs do lote como "isca" na API do Menor Preço. No entanto, ele salva *todos* os produtos que a API retorna na nota fiscal, não apenas o produto-isca. Isso enriquece a tabela `bronze_menorPreco_notas` com uma vasta gama de produtos concorrentes.
+
+* 🗺️ **Geocodificação de Novas Lojas:** Ao encontrar uma loja (`id_loja`) não cadastrada na `bronze_menorPreco_lojas`, o script utiliza a API do Google Geocoding para buscar suas coordenadas de latitude e longitude antes de salvá-la.
+
+* 🛡️ **Tolerância a Falhas (Banco de Dados):** Se a inserção final no banco de dados falhar (ex: perda de conexão), o `handle_execution_error` é acionado. Ele salva *todos* os dados coletados (notas e lojas) em arquivos `.csv` locais (`notas_parciais.csv`, `lojas_parciais.csv`).
+
+* 🔁 **Recuperação Automática:** Na próxima execução, o `main.py` detecta esses arquivos `.csv`. Ele primeiro executa o `run_recovery_flow`, que carrega os dados desses CSVs no banco de dados e depois os apaga, garantindo que nenhum dado seja perdido antes de iniciar uma nova coleta.
+
+* 🔔 **Monitoramento e Notificações:** Envia mensagens de sucesso ou erro para um chat do Telegram, permitindo o monitoramento remoto da execução.
 
 ---
 
-## Como Usar
+## 🚀 Como Usar
 
-### 1. Pré-requisitos
+### 1. 📋 Pré-requisitos
 
 Garanta que você tenha um banco de dados MariaDB acessível. O script espera se conectar a um banco chamado `dbDrogamais`.
 
@@ -33,7 +56,7 @@ Você precisará das seguintes tabelas (fontes e destino):
 * `bronze_menorPreco_notas` (destino dos dados brutos da API)
 * `bronze_menorPreco_lojas` (destino das lojas concorrentes)
 
-### 2. Instalação
+### 2. 💻 Instalação
 
 Clone o repositório e instale as dependências do Python:
 
@@ -41,7 +64,7 @@ Clone o repositório e instale as dependências do Python:
 pip install -r requirements.txt
 ```
 ---------------
-### 3. Configuração
+### 3. 🔑 Configuração
 
 O script usa um arquivo config.py para armazenar suas chaves e senhas. Este arquivo é ignorado pelo Git.
 
@@ -62,7 +85,7 @@ copy config.py.example config.py
 
 ----------------------
 
-### 4. Execução
+### 4. ▶️ Execução
 
 Uma vez configurado, basta executar o `main.py`:
 
@@ -72,7 +95,7 @@ python main.py
 
 O script cuidará do resto, seja iniciando uma nova coleta ou recuperando dados de uma execução anterior com falha.
 
-## Fluxo de Execução
+## 📊 Fluxo de Execução
 
 ### 1. main.py é iniciado.
 
@@ -119,22 +142,22 @@ O script cuidará do resto, seja iniciando uma nova coleta ou recuperando dados 
     Falha (Ex: DB Offline): handle_execution_error é chamado, save_partial_data cria os arquivos .csv para a próxima execução (Passo 2) e envia notificação de erro.
 
 
-## Estrutura do Projeto
+## 📂 Estrutura do Projeto
 
-*   `main.py`: Ponto de entrada. Orquestra os fluxos (normal vs. recuperação) e a etapa de Carga (Load).
+*   `main.py`: 🚦 Ponto de entrada. Orquestra os fluxos (normal vs. recuperação) e a etapa de Carga (Load).
 
-*   `flow.py`: Contém a lógica de negócio principal para run_normal_flow (Extração e Transformação) e run_recovery_flow (Carga de CSVs).
+*   `flow.py`: 🏃‍♂️ Contém a lógica de negócio principal para run_normal_flow (Extração e Transformação) e run_recovery_flow (Carga de CSVs).
 
-*   `db_manager.py`: Abstrai toda a comunicação com o banco de dados MariaDB. Contém todas as queries SQL (SELECTs e INSERTs).
+*   `db_manager.py`: 🗃️ Abstrai toda a comunicação com o banco de dados MariaDB. Contém todas as queries SQL (SELECTs e INSERTs).
 
-*   `api_services.py`: Gerencia todas as chamadas para APIs externas (Nota Paraná, Google Geocoding e Telegram).
+*   `api_services.py`: ☁️ Gerencia todas as chamadas para APIs externas (Nota Paraná, Google Geocoding e Telegram).
 
-*   `etl_utils.py`: Funções auxiliares de transformação de dados (lógica de Pandas), gerenciamento de estado (leitura/escrita do ultimo_indice.txt) e configuração de logging.
+*   `etl_utils.py`: 🛠️ Funções auxiliares de transformação de dados (lógica de Pandas), gerenciamento de estado (leitura/escrita do ultimo_indice.txt) e configuração de logging.
 
-*   `error_handler.py`: Funções centralizadas para lidar com exceções, salvar dados parciais em CSV e notificar falhas.
+*   `error_handler.py`: 🚨 Funções centralizadas para lidar com exceções, salvar dados parciais em CSV e notificar falhas.
 
-*   `config.py` (e `.example`): Armazena as credenciais e chaves de API.
+*   `config.py` (e `.example`): 🔒 Armazena as credenciais e chaves de API.
 
-*   `requirements.txt`: Lista de pacotes Python necessários.
+*   `requirements.txt`: 📦 Lista de pacotes Python necessários.
 
-*   `.gitignore`: Define os arquivos que não devem ser versionados (logs, config.py, arquivos .csv, etc.).
+*   `.gitignore`: 🙈 Define os arquivos que não devem ser versionados (logs, config.py, arquivos .csv, etc.).
