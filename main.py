@@ -54,9 +54,6 @@ def main():
                 )
             
             # --- PASSO 3: CARGA (LOAD) ---
-            # A lógica de Carga (insert) foi movida para o 'main'.
-            # Se 'inserir_lojas_sc' falhar, o 'except' abaixo será
-            # acionado e terá o 'Notas_geral' e 'Lojas_SC_geral' preenchidos.
             
             ### VIII Carga de Novas Lojas
             if not Lojas_SC_geral.empty:
@@ -87,9 +84,7 @@ def main():
 
         except Exception as e:
             # --- PASSO 5: LIDAR COM FALHA CATASTRÓFICA ---
-            # Agora, se 'inserir_lojas_sc' ou 'inserir_notas' falharem,
-            # as variáveis 'Notas_geral' e 'Lojas_SC_geral' estarão PREENCHIDAS
-            # e o 'handle_execution_error' salvará o CSV.
+
             handle_execution_error(
                 e, Notas_geral, Lojas_SC_geral, indice_para_salvar,
                 now_gmt3, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID

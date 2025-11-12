@@ -1,8 +1,9 @@
 # init_db.py
 import mariadb as mdb
 from config import DB_CONFIG
-import os # <-- Adicionado
-import re # <-- Adicionado para uma limpeza mais robusta
+import os
+import re
+import sys # <-- Adicionado para 'exit'
 
 # Define o diretório onde os arquivos .sql estão
 MIGRATIONS_DIR = 'migrations'
@@ -31,7 +32,6 @@ def clean_procedure_sql(sql_raw):
     sql_no_comments = re.sub(r'--.*?\n', '\n', sql_raw)
     
     # Encontra o bloco principal do CREATE PROCEDURE
-    # (procura por algo entre "DELIMITER $$" e "$$ DELIMITER ;")
     match = re.search(r'DELIMITER\s+\$\$(.*)\$\$\s*DELIMITER\s+;', sql_no_comments, re.IGNORECASE | re.DOTALL)
     
     if match:
@@ -42,70 +42,94 @@ def clean_procedure_sql(sql_raw):
     sql_cleaned = re.sub(r'DELIMITER\s+\$\$\s*', '', sql_no_comments, flags=re.IGNORECASE)
     sql_cleaned = re.sub(r'\$\$\s*DELIMITER\s+;\s*$', '', sql_cleaned, flags=re.IGNORECASE | re.DOTALL)
     
-    # Remove espaços em branco extras do início e fim
     return sql_cleaned.strip()
 
 
 def inicializar_banco():
     """
-    Conecta ao banco de dados e garante que as tabelas e
-    procedures de destino do Menor Preço existam.
+    Conecta ao banco, encontra TODOS os arquivos .sql na pasta 'migrations'
+    e os executa em ordem alfabética.
     """
     conn = None
     cursor = None
+    current_file = None # Variável para saber qual arquivo falhou
     
     try:
-        # Conecta ao banco de dados principal
+        # --- 1. Encontrar e ordenar os arquivos de migração ---
+        print(f"Procurando por arquivos .sql em '{MIGRATIONS_DIR}'...")
+        
+        if not os.path.exists(MIGRATIONS_DIR):
+            print(f"❌ ERRO: O diretório '{MIGRATIONS_DIR}' não foi encontrado.")
+            sys.exit(1)
+            
+        # Lista todos os arquivos no diretório
+        all_files = os.listdir(MIGRATIONS_DIR)
+        
+        # Filtra apenas os arquivos .sql
+        sql_files = [f for f in all_files if f.endswith('.sql')]
+        
+        # Ordena os arquivos (v1_01, v1_02, v2_01, etc.)
+        sql_files.sort()
+        
+        if not sql_files:
+            print(f"Nenhum arquivo .sql encontrado em '{MIGRATIONS_DIR}'. Nada a fazer.")
+            return
+
+        print(f"Arquivos de migração encontrados e ordenados:")
+        for f in sql_files:
+            print(f"  - {f}")
+        
+        # --- 2. Conectar ao banco ---
+        print("\nConectando ao banco de dados 'dbDrogamais'...")
         conn = mdb.connect(**DB_CONFIG, database="dbDrogamais")
         cursor = conn.cursor()
+        
+        print("\n--- Iniciando execução das migrações ---")
 
-        # --- 1. Carregar Tabelas ---
-        
-        print("Verificando tabela 'bronze_menorPreco_lojas'...")
-        sql_lojas = read_sql_file('v1_01_bronze_menorPreco_lojas.sql')
-        cursor.execute(sql_lojas)
-        
-        print("Verificando tabela 'bronze_menorPreco_produtos'...")
-        sql_produtos = read_sql_file('v1_02_bronze_menorPreco_produtos.sql')
-        cursor.execute(sql_produtos)
-        
-        print("Verificando tabela 'bronze_menorPreco_notas'...")
-        sql_notas = read_sql_file('v1_03_bronze_menorPreco_notas.sql')
-        cursor.execute(sql_notas)
-        
-        print("Verificando tabela 'silver_menorPreco_notas'...")
-        sql_silver_notas = read_sql_file('v1_04_silver_menorPreco_notas.sql')
-        cursor.execute(sql_silver_notas)
+        # --- 3. Executar cada arquivo ---
+        for filename in sql_files:
+            current_file = filename # Armazena o arquivo atual para o log de erro
+            print(f"Executando: {filename}...")
+            
+            # Lê o conteúdo do arquivo
+            sql_raw = read_sql_file(filename)
+            
+            sql_to_execute = ""
+            
+            # Verifica se é uma procedure (pela convenção de nome v2_)
+            if filename.startswith('v2_'):
+                sql_to_execute = clean_procedure_sql(sql_raw)
+            else:
+                # É um arquivo de tabela (v1_)
+                sql_to_execute = sql_raw
+            
+            # Executa o SQL
+            if sql_to_execute.strip():
+                # Executa o conteúdo do arquivo como um único comando
+                cursor.execute(sql_to_execute) 
+            else:
+                print(f"⚠️ AVISO: Nenhum SQL executável encontrado em {filename}, pulando...")
 
-        # --- 2. Carregar Procedure ---
-        
-        print("Verificando procedure 'proc_atualiza_silver_menorPreco_notas'...")
-        sql_proc_raw = read_sql_file('v2_01_proc_atualiza_silver_menorPreco_notas.sql')
-        
-        # Limpa o SQL da procedure (remove DELIMITERs)
-        sql_proc_clean = clean_procedure_sql(sql_proc_raw)
-        
-        # Executa o 'CREATE PROCEDURE'
-        if sql_proc_clean:
-            cursor.execute(sql_proc_clean)
-        else:
-            print("⚠️ AVISO: Não foi possível limpar o SQL da procedure, pulando...")
-
+        # --- 4. Commit ---
         conn.commit()
-        print("✅ Verificação do esquema do banco (Bronze e Silver) concluída com sucesso!")
+        print("\n" + "="*50)
+        print("✅ SUCESSO! Todas as migrações foram executadas.")
+        print("="*50)
     
     except mdb.Error as e:
-        print(f"❌ Erro ao inicializar o banco de dados: {e}")
+        print(f"\n❌ ERRO DE BANCO DE DADOS (ao executar {current_file}): {e}")
         if conn:
+            print("Executando rollback...")
             conn.rollback() # Desfaz qualquer alteração parcial
     except Exception as e:
         # Captura outros erros (ex: FileNotFoundError)
-        print(f"❌ Erro inesperado: {e}")
+        print(f"\n❌ Erro inesperado (no arquivo {current_file}): {e}")
     finally:
         if cursor:
             cursor.close()
         if conn:
             conn.close()
+        print("Conexão com o banco fechada.")
 
 if __name__ == "__main__":
     print("Iniciando setup do banco de dados...")

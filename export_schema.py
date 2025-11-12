@@ -17,10 +17,16 @@ except ImportError:
 # --- CONFIGURAÇÃO ---
 # 1. Defina os NOMES dos objetos que você quer exportar
 LISTA_TABELAS = [
+    # Tabelas deste projeto (já estavam)
     'bronze_menorPreco_lojas',
     'bronze_menorPreco_produtos',
     'bronze_menorPreco_notas',
-    'silver_menorPreco_notas'
+    'silver_menorPreco_notas',
+    'bronze_plugpharma_vendas',
+    'bronze_plugpharma_produtos',
+    'bronze_cidades',
+    'bronze_lojas',
+    'dbSults.tb_report_auditoria_embedded' # (Talvez seja necessário ajustar o nome se tiver ponto)
 ]
 
 LISTA_PROCEDURES = [
