@@ -8,7 +8,7 @@ O script foi desenvolvido para coletar dados de preços de concorrentes com base
 
 * [Principais Funcionalidades](#-principais-funcionalidades)
 * [Como Usar](#-como-usar)
-* [Scripts Utilitários](#-scripts-utilitarios)
+* [Scripts Utilitários](#scripts-utilitarios)
 * [Fluxo de Execução](#-fluxo-de-execução)
 * [Estrutura do Projeto](#-estrutura-do-projeto)
 
