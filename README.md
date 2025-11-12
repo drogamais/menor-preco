@@ -93,7 +93,8 @@ pip install -r requirements.txt
 
 </details>
 
-<details> <summary><strong>3. 🔑 Configuração</strong></summary>
+<details> 
+    <summary><strong>3. 🔑 Configuração</strong></summary>
 
 O script usa um arquivo <code>config.py</code> para armazenar suas chaves e senhas. Este arquivo é ignorado pelo Git.
 
@@ -115,7 +116,7 @@ Abra o <code>config.py</code> e preencha as variáveis com suas credenciais:
 <details> 
     <summary><strong>4. 🏗️ Inicialização do Banco (Primeira Execução)</strong></summary>
 Antes de executar o pipeline principal pela primeira vez, você precisa garantir que as tabelas de destino existam. O script init_db.py faz isso para você.
-
+    
 ```bash
 python init_db.py
 ```
