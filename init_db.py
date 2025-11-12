@@ -26,7 +26,7 @@ def inicializar_banco():
         cursor.execute(SQL_CREATE_SILVER_NOTAS)
 
         print("Verificando procedure 'proc_atualiza_silver_menorPreco_notas'...")
-        cursor.execute(SQL_CREATE_PROC_SILVER_NOTAS)
+        cursor.execute(migrations.v2_atualizar_silver_notas.sql)
         
         conn.commit()
         print("✅ Verificação do esquema do banco (Bronze e Silver) concluída com sucesso!")
