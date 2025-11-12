@@ -1,7 +1,6 @@
 # init_db.py
 import mariadb as mdb
 from config import DB_CONFIG
-from migrations.v1_create_all_tables import SQL_CREATE_LOJAS, SQL_CREATE_PRODUTOS, SQL_CREATE_NOTAS, SQL_CREATE_SILVER_NOTAS
 
 def inicializar_banco():
     """
@@ -14,19 +13,19 @@ def inicializar_banco():
         cursor = conn.cursor()
         
         print("Verificando tabela 'bronze_menorPreco_lojas'...")
-        cursor.execute(SQL_CREATE_LOJAS)
+        cursor.execute(v1_01_bronze_menorPreco_lojas.sql)
         
         print("Verificando tabela 'bronze_menorPreco_produtos'...")
-        cursor.execute(SQL_CREATE_PRODUTOS)
+        cursor.execute(v1_02_bronze_menorPreco_produtos.sql)
         
         print("Verificando tabela 'bronze_menorPreco_notas'...")
-        cursor.execute(SQL_CREATE_NOTAS)
+        cursor.execute(v1_03_bronze_menorPreco_notas.sql)
         
         print("Verificando tabela 'silver_menorPreco_notas'...")
-        cursor.execute(SQL_CREATE_SILVER_NOTAS)
+        cursor.execute(v1_04_silver_menorPreco_notas.sql)
 
-        print("Verificando procedure 'proc_atualiza_silver_menorPreco_notas'...")
-        cursor.execute(migrations.v2_atualizar_silver_notas.sql)
+        print("Verificando tabela 'proc_atualiza_silver_menorPreco_notas.sql'...")
+        cursor.execute(proc_atualiza_silver_menorPreco_notas.sql)
         
         conn.commit()
         print("✅ Verificação do esquema do banco (Bronze e Silver) concluída com sucesso!")
