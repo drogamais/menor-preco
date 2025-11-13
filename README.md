@@ -18,7 +18,7 @@ Este é um pipeline de ETL robusto e tolerante a falhas projetado para:
 
 *   Coletar dados de preços da API do Menor Preço (Nota Paraná).
 
-*   Enriquecer os dados com geocodificação de lojas (Google API) e notificações (Telegram).
+*   Enriquecer os dados com geocodificação de lojas (Nominatim API) e notificações (Telegram).
 
 *   Carregar os dados em um banco MariaDB, com lógica de recuperação automática em caso de falha.
 
@@ -44,7 +44,7 @@ Este projeto é um pipeline de ETL (Extração, Transformação e Carga) complet
 
 <details> 
     <summary>🗺️ <strong>Geocodificação de Novas Lojas</strong></summary> 
-    Ao encontrar uma loja (<code>id_loja</code>) não cadastrada na <code>bronze_menorPreco_lojas</code>, o script utiliza a API do Google Geocoding para buscar suas coordenadas de latitude e longitude antes de salvá-la. 
+    Ao encontrar uma loja (<code>id_loja</code>) não cadastrada na <code>bronze_menorPreco_lojas</code>, o script utiliza a API do Nominatim Geocoding(OpenStreetMap) para buscar suas coordenadas de latitude e longitude antes de salvá-la. 
 </details>
 
 <details> 
@@ -109,7 +109,6 @@ Abra o <code>config.py</code> e preencha as variáveis com suas credenciais:
 
 <ul>
     <li><strong><code>DB_CONFIG</code></strong>: Dicionário com <code>user</code>, <code>password</code>, <code>host</code> e <code>port</code> do seu MariaDB.</li> 
-    <li><strong><code>GOOGLE_API_KEY</code></strong>: Sua chave da API do Google Cloud (para o Geocoding).</li> 
     <li><strong><code>TELEGRAM_TOKEN</code></strong>: O token do seu Bot do Telegram.</li> 
     <li><strong><code>TELEGRAM_CHAT_ID</code></strong>: O ID do chat para onde as notificações serão enviadas.</li> 
 </ul>
@@ -200,7 +199,7 @@ A pasta utils/ contém scripts para administrar, fazer backup e etc no banco de 
         <li><strong>[L] Carga:</strong> 
             <ul> 
                 <li><code>main.py</code> recebe os DataFrames.</li> 
-                <li>(Opcional) <code>api_services.buscar_lat_lon_lojas_sc</code> enriquece <code>Lojas_SC_geral</code> com Lat/Lon do Google.</li> 
+                <li>(Opcional) <code>api_services.buscar_lat_lon_lojas_sc</code> enriquece <code>Lojas_SC_geral</code> com Lat/Lon do Nominatim</li> 
                 <li><code>db_manager.inserir_lojas_sc</code> e <code>db_manager.inserir_notas</code> carregam os dados no MariaDB.</li> 
             </ul> 
         </li> 
@@ -227,7 +226,7 @@ A pasta utils/ contém scripts para administrar, fazer backup e etc no banco de 
     <ul> 
         <li><code>flow.py</code>: Contém a lógica principal (<code>run_normal_flow</code>, <code>run_recovery_flow</code>).</li> 
         <li><code>db_manager.py</code>: Abstrai toda a comunicação com o MariaDB (SELECTs, INSERTs).</li> 
-        <li><code>api_services.py</code>: Gerencia chamadas para APIs externas (Nota Paraná, Google, Telegram).
+        <li><code>api_services.py</code>: Gerencia chamadas para APIs externas (Nota Paraná, Nominatim, Telegram).
         </li> <li><code>etl_utils.py</code>: Funções auxiliares (Pandas, gerenciamento de índice).</li> 
         <li><code>error_handler.py</code>: Funções centralizadas para lidar com exceções e salvar CSVs.</li> 
     </ul>

@@ -11,7 +11,7 @@ from MP_Feeder.db_manager import (
     inserir_lojas_sc, inserir_notas,
     fetch_gtins_principais
 )
-from MP_Feeder.api_services import buscar_notas, buscar_lat_lon_lojas_sc
+from MP_Feeder.api_services import buscar_notas, buscar_lat_lon_lojas_sc_nominatim
 from MP_Feeder.etl_utils import (
     recuperar_ultimo_indice, transformar_dados_produtos,
     grupo_eans_selecionados, gerar_consultas
@@ -62,7 +62,7 @@ def run_recovery_flow(configs, now_gmt3):
         
         if total_para_buscar > 0:
             print(f"##### 💾 RECUPERANDO {total_para_buscar} LOJAS (REAIS) DO CSV... #####")
-            Lojas_SC_com_latlon = buscar_lat_lon_lojas_sc(lojas_para_buscar_latlon, GOOGLE_API_KEY)
+            Lojas_SC_com_latlon = buscar_lat_lon_lojas_sc_nominatim(lojas_para_buscar_latlon)
             inserir_lojas_sc(Lojas_SC_com_latlon, now_gmt3, DB_CONFIG)
         else:
             print("##### Nenhuma loja nova do CSV para buscar/inserir. #####")

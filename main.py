@@ -5,14 +5,14 @@ from datetime import datetime, timezone, timedelta
 import pandas as pd
 
 # Importa as configs
-from config import DB_CONFIG, GOOGLE_API_KEY, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
+from config import DB_CONFIG, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID
 
 # Importa os módulos de execução
 from MP_Feeder.flow import run_recovery_flow, run_normal_flow
 from MP_Feeder.error_handler import handle_execution_error, handle_api_fail, handle_success
 from MP_Feeder.etl_utils import setup_logging
 from MP_Feeder.db_manager import inserir_lojas_sc, inserir_notas
-from MP_Feeder.api_services import buscar_lat_lon_lojas_sc
+from MP_Feeder.api_services import buscar_lat_lon_lojas_sc_nominatim
 
 def main():
     # --- CONFIGURAÇÕES DE EXECUÇÃO ---
@@ -23,7 +23,6 @@ def main():
     # Agrupa todas as configs
     configs = {
         "DB_CONFIG": DB_CONFIG,
-        "GOOGLE_API_KEY": GOOGLE_API_KEY,
         "TELEGRAM_TOKEN": TELEGRAM_TOKEN,
         "TELEGRAM_CHAT_ID": TELEGRAM_CHAT_ID,
         "arquivo_indice": "ultimo_indice.txt",
@@ -59,7 +58,7 @@ def main():
             if not Lojas_SC_geral.empty:
                 Lojas_SC_geral_sem_duplicatas = Lojas_SC_geral.drop_duplicates(subset=["id_loja"]).reset_index(drop=True)
                 print(f"##### 💾 SALVANDO {len(Lojas_SC_geral_sem_duplicatas)} LOJAS (TOTAIS OU PARCIAIS)... #####")
-                Lojas_SC_com_latlon = buscar_lat_lon_lojas_sc(Lojas_SC_geral_sem_duplicatas, GOOGLE_API_KEY)
+                Lojas_SC_com_latlon = buscar_lat_lon_lojas_sc_nominatim(Lojas_SC_geral_sem_duplicatas)
                 inserir_lojas_sc(Lojas_SC_com_latlon, now_gmt3, DB_CONFIG)
             else:
                 print("##### NENHUMA LOJA NOVA ENCONTRADA PARA CARGA. #####")
