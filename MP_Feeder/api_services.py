@@ -1,4 +1,4 @@
-# api_services.py
+# MP_Feeder/api_services.py
 import requests
 import pandas as pd
 import logging
@@ -7,10 +7,10 @@ import concurrent.futures
 
 # --- SERVIÇO 1: NOTA PARANÁ (MENOR PREÇO) ---
 
-def buscar_notas(Consultas, Lojas, ultimo_indice, arquivo_indice, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID):
+def buscar_notas(Consultas, Lojas):
     """
     Busca as notas fiscais na API do Menor Preço.
-    Agora recebe os tokens do Telegram para poder notificar em caso de erro.
+    Refatorado para Prefect: Não salva estado, não manda Telegram, apenas retorna dados.
     """
     print("##### COLETANDO NOTAS #####")
     logging.info("##### COLETANDO NOTAS #####")
@@ -23,21 +23,15 @@ def buscar_notas(Consultas, Lojas, ultimo_indice, arquivo_indice, TELEGRAM_TOKEN
     LIMITE_ERROS_CONSECUTIVOS = 5
     
     run_completo = True 
-    indice_salvar = ultimo_indice
-
-    if Consultas.empty:
-        print("##### NENHUMA CONSULTA PARA REALIZAR. PULANDO A COLETA DE NOTAS. #####")
-        logging.warning("##### NENHUMA CONSULTA PARA REALIZAR. PULANDO A COLETA DE NOTAS. #####")
-        return pd.DataFrame(), pd.DataFrame(), run_completo, indice_salvar
-
-    Consultas = Consultas[Consultas["index"] >= ultimo_indice]
-    lojas_cadastradas = set(Lojas["id_loja"])
     
+    # Lógica para filtrar consultas já feitas removida, pois o Flow manda o lote exato.
+    
+    lojas_cadastradas = set(Lojas["id_loja"])
     total_consultas = len(Consultas)
+
     if total_consultas == 0:
-        print("##### NENHUMA CONSULTA RESTANTE A PARTIR DO ÍNDICE RECUPERADO. #####")
-        logging.warning("##### NENHUMA CONSULTA RESTANTE A PARTIR DO ÍNDICE RECUPERADO. #####")
-        return pd.DataFrame(), pd.DataFrame(), run_completo, indice_salvar
+        print("##### NENHUMA CONSULTA NESTE LOTE. #####")
+        return pd.DataFrame(), pd.DataFrame(), True
 
     for i, (_, row) in enumerate(Consultas.iterrows(), start=1):
         hash_local = row["geohash"]
@@ -54,25 +48,22 @@ def buscar_notas(Consultas, Lojas, ultimo_indice, arquivo_indice, TELEGRAM_TOKEN
             if status_code == 200:
                 erros_consecutivos = 0
                 data = response.json()
-
                 produtos_encontrados = data.get("produtos", [])
                 num_produtos = len(produtos_encontrados)
 
                 for produto in produtos_encontrados:
-                    notas.append(
-                        {
-                            "id_nota": produto.get("id"),
-                            "datahora": produto.get("datahora"),
-                            "id_loja": produto.get("estabelecimento", {}).get("codigo"),
-                            "geohash": hash_local,
-                            "gtin": produto.get("gtin"),
-                            "descricao": produto.get("desc"),
-                            "valor_desconto": produto.get("valor_desconto"),
-                            "valor_tabela": produto.get("valor_tabela"),
-                            "valor": produto.get("valor"),
-                            "cidade": produto.get("estabelecimento", {}).get("mun", ""),
-                        }
-                    )
+                    notas.append({
+                        "id_nota": produto.get("id"),
+                        "datahora": produto.get("datahora"),
+                        "id_loja": produto.get("estabelecimento", {}).get("codigo"),
+                        "geohash": hash_local,
+                        "gtin": produto.get("gtin"),
+                        "descricao": produto.get("desc"),
+                        "valor_desconto": produto.get("valor_desconto"),
+                        "valor_tabela": produto.get("valor_tabela"),
+                        "valor": produto.get("valor"),
+                        "cidade": produto.get("estabelecimento", {}).get("mun", ""),
+                    })
                     id_loja = produto.get("estabelecimento", {}).get("codigo")
                     if id_loja not in lojas_cadastradas:
                         logradouro = (
@@ -80,39 +71,31 @@ def buscar_notas(Consultas, Lojas, ultimo_indice, arquivo_indice, TELEGRAM_TOKEN
                             f"{produto.get('estabelecimento', {}).get('nm_logr', '')}, "
                             f"{produto.get('estabelecimento', {}).get('nr_logr', '')}"
                         )
-                        lojas_sem_cadastro.append(
-                            {
-                                "id_loja": id_loja,
-                                "nome_fantasia": produto.get("estabelecimento", {}).get("nm_fan", ""),
-                                "razao_social": produto.get("estabelecimento", {}).get("nm_emp", ""),
-                                "logradouro": logradouro.strip(),
-                                "cidade": produto.get("estabelecimento", {}).get("mun", ""),
-                                "geohash": hash_local,
-                                "local": produto.get("local", ""),
-                            }
-                        )
+                        lojas_sem_cadastro.append({
+                            "id_loja": id_loja,
+                            "nome_fantasia": produto.get("estabelecimento", {}).get("nm_fan", ""),
+                            "razao_social": produto.get("estabelecimento", {}).get("nm_emp", ""),
+                            "logradouro": logradouro.strip(),
+                            "cidade": produto.get("estabelecimento", {}).get("mun", ""),
+                            "geohash": hash_local,
+                            "local": produto.get("local", ""),
+                        })
                 
-                print(f"{i}/{total_consultas} (Índice: {indice_atual}) - {ean} - 200 (Encontrados: {num_produtos})")
-                logging.info(f"{i}/{total_consultas} (Índice: {indice_atual}) - {ean} - 200 - Encontrados: {num_produtos}")
-                
-                indice_salvar = indice_atual + 1
+                print(f"{i}/{total_consultas} - {ean} - 200 (Encontrados: {num_produtos})")
+                logging.info(f"{i}/{total_consultas} - {ean} - 200 - Encontrados: {num_produtos}")
 
             elif status_code == 204:
                 erros_consecutivos = 0
-                print(f"{i}/{total_consultas} (Índice: {indice_atual}) - {ean} - 204 (Sem dados)")
-                logging.info(f"{i}/{total_consultas} (Índice: {indice_atual}) - {ean} - 204 - Sem dados")
-                indice_salvar = indice_atual + 1
+                print(f"{i}/{total_consultas} - {ean} - 204 (Sem dados)")
+                logging.info(f"{i}/{total_consultas} - {ean} - 204 - Sem dados")
 
             elif status_code in (404, 401, 403):
-                msg_erro = f"❌ ERRO GRAVE {status_code}: API Menor Preço pode estar offline ou URL errada. Script interrompido."
-                logging.critical(msg_erro)
-                mandarMSG(msg_erro, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID) # <-- CORREÇÃO
-                raise Exception(f"ERRO FATAL {status_code}. Abortando.")
+                # Erros críticos lançam exceção para o Prefect pegar e alertar
+                raise Exception(f"ERRO FATAL API MENOR PREÇO: {status_code}")
             
             elif 400 <= status_code < 500:
                 print(f"❌ Erro de CLIENTE ({status_code}) para GTIN {ean}. PULANDO...")
-                logging.warning(f"{i}/{total_consultas} (Índice: {indice_atual}) - {ean} - {status_code} - Erro de cliente. Pulando.")
-                indice_salvar = indice_atual + 1
+                logging.warning(f"{i}/{total_consultas} - {ean} - {status_code} - Erro de cliente.")
             
             elif 500 <= status_code < 600:
                 raise Exception(f"⚠️ Erro no servidor ({status_code})")
@@ -120,189 +103,98 @@ def buscar_notas(Consultas, Lojas, ultimo_indice, arquivo_indice, TELEGRAM_TOKEN
                 raise Exception(f"⚠️ Status code inesperado ({status_code}) para {ean}")
 
         except Exception as e:
-            if "ERRO FATAL" in str(e):
-                raise e
-
-            print(f"❌ Erro na requisição para GTIN {ean} e geohash {hash_local}: {e}. PULANDO...")
-            logging.error(f"Erro na requisição para GTIN {ean} e geohash {hash_local}: {e}. PULANDO...")
+            print(f"❌ Erro na requisição: {e}. PULANDO...")
+            logging.error(f"Erro na requisição: {e}")
             
             erros_consecutivos += 1
-            
             if erros_consecutivos >= LIMITE_ERROS_CONSECUTIVOS:
-                print(f"❌ LIMITE DE {LIMITE_ERROS_CONSECUTIVOS} ERROS CONSECUTIVOS ATINGIDO.")
-                logging.critical(f"LIMITE DE {LIMITE_ERROS_CONSECUTIVOS} ERROS CONSECUTIVOS ATINGIDO. INTERROMPENDO O LOOP.")
-                
-                msg_erro = f"❌ ERRO GRAVE: {LIMITE_ERROS_CONSECUTIVOS} erros consecutivos no Menor Preço. Loop interrompido. Salvando dados parciais..."
-                mandarMSG(msg_erro, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID) # <-- CORREÇÃO
-                
+                print(f"❌ LIMITE DE ERROS CONSECUTIVOS ({LIMITE_ERROS_CONSECUTIVOS}) ATINGIDO.")
+                # Retorna o que pegou até agora, mas marca como incompleto
                 run_completo = False 
                 break 
-            
             continue 
     
-    print("##### PREPARANDO DADOS COLETADOS PARA SAÍDA... #####")
+    print("##### PREPARANDO DADOS COLETADOS... #####")
     Notas_df, Lojas_SC_df = _preparar_saida(notas, lojas_sem_cadastro)
     
-    return Notas_df, Lojas_SC_df, run_completo, indice_salvar
+    # Retorna APENAS dados e status. O Prefect lida com o resto.
+    return Notas_df, Lojas_SC_df, run_completo, 0
 
 
 def _preparar_saida(notas, lojas_sem_cadastro):
-    """
-    Função auxiliar privada. Converte as listas de resultados em DataFrames limpos.
-    """
+    """Auxiliar para limpar DataFrames."""
     Lojas_SC = pd.DataFrame(lojas_sem_cadastro).drop_duplicates(subset="id_loja")
     if not Lojas_SC.empty:
         Lojas_SC["endereco"] = (
             Lojas_SC["logradouro"] + ", " + Lojas_SC["cidade"] + ", PR, Brasil"
         )
-    else:
-        print("#### ⚠️  AVISO: TODAS AS LOJAS BUSCADAS DETÉM CADASTRO. #### ")
-
+    
     Notas = pd.DataFrame(notas).drop_duplicates(subset="id_nota")
-
     if "datahora" in Notas.columns and not Notas.empty:
         Notas["datahora"] = Notas["datahora"].astype(str).str.rstrip("Z")
         Notas["datahora"] = pd.to_datetime(Notas["datahora"], errors="coerce")
         Notas["datahora"] = Notas["datahora"].dt.strftime("%Y-%m-%d %H:%M:%S")
-    else:
-        print("⚠️ Nenhuma nota com campo 'datahora' foi retornada.")
         
     return Notas, Lojas_SC
 
 # --- SERVIÇO 2: NOMINATIM GEOCODING ---
 
 def _obter_lat_lon_nominatim(endereco, index, total):
-    """
-    Função auxiliar privada. Busca a coordenada de UM endereço usando Nominatim (OpenStreetMap).
-    Não requer chave de API.
-    """
-
     url = "https://nominatim.openstreetmap.org/search"
-    params = {
-        "q": endereco,
-        "format": "jsonv2",
-        "addressdetails": 1,
-        "limit": 1,
-    }
-    headers = {"User-Agent": "mp-feeder/1.0 (contato@seudominio.com)"}
+    params = {"q": endereco, "format": "jsonv2", "addressdetails": 1, "limit": 1}
+    headers = {"User-Agent": "mp-feeder/1.0 (admin@drogamais.com.br)"}
 
     try:
         resposta = requests.get(url, params=params, headers=headers, timeout=20)
-        status_code = resposta.status_code
-
-        if status_code != 200:
-            logging.error(f"{index+1}/{total} - {endereco} - ERRO HTTP: {status_code}")
-            return None, None
-
+        if resposta.status_code != 200: return None, None
         dados = resposta.json()
         if isinstance(dados, list) and len(dados) > 0:
-            item = dados[0]
-            latitude = item.get("lat")
-            longitude = item.get("lon")
-            display_name = item.get("display_name")
-
-            logging.info(
-                f"{index+1}/{total} - {endereco} - SUCESSO - LAT: {latitude}, LON: {longitude}"
-            )
-            return latitude, longitude
-        else:
-            logging.warning(f"{index+1}/{total} - {endereco} - Não encontrado no Nominatim")
-            return None, None
-
-    except requests.RequestException as e:
-        logging.error(f"{index+1}/{total} - {endereco} - ERRO de rede/timeout - {e}")
+            return dados[0].get("lat"), dados[0].get("lon")
+        return None, None
+    except Exception:
         return None, None
 
-
 def buscar_lat_lon_lojas_sc_nominatim(Lojas_SC):
-    """
-    Versão sem Google. Usa Nominatim (gratuito e sem chave) para buscar coordenadas.
-    """
-
     print("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
     logging.info("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
 
-    LIMITE_DIARIO_GEOCODING = 100  # respeite o uso público
-    total_encontradas = len(Lojas_SC)
+    if Lojas_SC.empty: return Lojas_SC
 
-    if total_encontradas > LIMITE_DIARIO_GEOCODING:
-        print(f"⚠️ Limitando para {LIMITE_DIARIO_GEOCODING} lojas/dia (limite ético Nominatim).")
-        Lojas_SC = Lojas_SC.sample(n=LIMITE_DIARIO_GEOCODING).copy()
-
-    elif Lojas_SC.empty:
-        print("##### NENHUMA LOJA NOVA PARA BUSCAR LAT/LON. #####")
-        logging.info("##### NENHUMA LOJA NOVA PARA BUSCAR LAT/LON. #####")
-        return Lojas_SC
+    # Limite de segurança para não bloquear o IP
+    if len(Lojas_SC) > 100:
+        Lojas_SC = Lojas_SC.head(100)
 
     total_lojas = len(Lojas_SC)
-    latitudes = []
-    longitudes = []
+    latitudes, longitudes = [], []
     tarefas = []
 
-    # monta tarefas
     for row in Lojas_SC.itertuples():
-        # Padroniza endereço para evitar confusões
         endereco_limpo = limpar_endereco_para_nominatim(row.endereco)
-
         tarefas.append((endereco_limpo, row.Index, total_lojas))
 
-    print(f"Iniciando busca paralela de {total_lojas} endereços...")
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
         for lat, lon in executor.map(lambda p: _obter_lat_lon_nominatim(*p), tarefas):
             latitudes.append(lat)
             longitudes.append(lon)
-            time.sleep(1.1)  # respeitar limite de 1 req/s no Nominatim
+            time.sleep(1.1) # Respeita limite da API gratuita
 
     Lojas_SC["Latitude"] = latitudes
     Lojas_SC["Longitude"] = longitudes
-
-    print("✅ Busca concluída (Nominatim)!")
     return Lojas_SC
 
-
 def limpar_endereco_para_nominatim(endereco: str) -> str:
-    if not endereco:
-        return ""
+    if not endereco: return ""
+    e = endereco.upper().strip().replace("(MUNICÍPIO", "").replace("MUNICIPIO", "").replace(")", "")
+    while "  " in e: e = e.replace("  ", " ")
+    if "PR" not in e.split(",")[-2:] and not e.endswith("PR"): e = e.rstrip(", ") + ", PR"
+    if "BRASIL" not in e: e = e.rstrip(", ") + ", BRASIL"
+    return e.replace(",,", ",").replace(", ,", ", ").strip(" ,")
 
-    e = endereco.upper().strip()
-
-    # Remove "(MUNICÍPIO ...)" e parênteses soltos
-    e = e.replace("(MUNICÍPIO", "")
-    e = e.replace("MUNICIPIO", "")
-    e = e.replace(")", "")
-
-    # Remove múltiplos espaços
-    while "  " in e:
-        e = e.replace("  ", " ")
-
-    # Garante que termina com ", PR, BRASIL"
-    if "PR" not in e.split(",")[-2:]:
-        if not e.endswith("PR"):
-            e = e.rstrip(", ") + ", PR"
-    if "BRASIL" not in e:
-        e = e.rstrip(", ") + ", BRASIL"
-
-    # Remove possíveis duplicações de vírgula
-    e = e.replace(",,", ",").replace(", ,", ", ").strip(" ,")
-
-    return e
-
-
-# --- SERVIÇO 3: TELEGRAM ---
+# --- SERVIÇO 3: TELEGRAM (Mantido para uso no Flow) ---
 def mandarMSG(message, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID):
-    """
-    Envia uma mensagem para o Telegram.
-    Recebe o Token e o Chat ID como parâmetros.
-    """
-    token = TELEGRAM_TOKEN 
-    chat_id = TELEGRAM_CHAT_ID 
-    url = f"https://api.telegram.org/bot{token}/sendMessage"
-    params = {"chat_id": chat_id, "text": message}
-    
+    if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: return
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     try:
-        response = requests.get(url, params=params, timeout=10)
-        response.raise_for_status() 
-        logging.info(f"Mensagem enviada para o Telegram: {message}")
-    except requests.RequestException as e:
-        print(f"❌ ERRO AO ENVIAR MENSAGEM PARA O TELEGRAM: {e}")
-        logging.error(f"❌ ERRO AO ENVIAR MENSAGEM PARA O TELEGRAM: {e}")
+        requests.get(url, params={"chat_id": TELEGRAM_CHAT_ID, "text": message}, timeout=10)
+    except Exception as e:
+        print(f"Erro ao enviar Telegram: {e}")
