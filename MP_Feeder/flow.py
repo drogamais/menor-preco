@@ -27,7 +27,6 @@ def run_recovery_flow(configs, now_gmt3):
     
     # Desempacota configs
     DB_CONFIG = configs['DB_CONFIG']
-    GOOGLE_API_KEY = configs['GOOGLE_API_KEY']
     arquivo_indice = configs['arquivo_indice']
     arquivo_notas_parciais = configs['arquivo_notas_parciais']
     arquivo_lojas_parciais = configs['arquivo_lojas_parciais']
