@@ -8,6 +8,7 @@ O script foi desenvolvido para coletar dados de preços de concorrentes com base
 
 * [Principais Funcionalidades](#-principais-funcionalidades)
 * [Como Usar](#-como-usar)
+* [Scripts Utilitários](#%EF%B8%8F-scripts-utilitarios)
 * [Fluxo de Execução](#-fluxo-de-execução)
 * [Estrutura do Projeto](#-estrutura-do-projeto)
 
@@ -20,6 +21,8 @@ Este é um pipeline de ETL robusto e tolerante a falhas projetado para:
 *   Enriquecer os dados com geocodificação de lojas (Google API) e notificações (Telegram).
 
 *   Carregar os dados em um banco MariaDB, com lógica de recuperação automática em caso de falha.
+
+---
 
 ## ✨ Principais Funcionalidades
 
@@ -118,7 +121,7 @@ Abra o <code>config.py</code> e preencha as variáveis com suas credenciais:
 Antes de executar o pipeline principal pela primeira vez, você precisa garantir que as tabelas de destino existam. O script init_db.py faz isso para você.
     
 ```bash
-python init_db.py
+python utils\init_db.py
 ```
 
 Este script irá criar as tabelas bronze_menorPreco_produtos, bronze_menorPreco_lojas e bronze_menorPreco_notas com o esquema e collate corretos, caso elas ainda não existam.
@@ -137,6 +140,18 @@ python main.py
 O script cuidará do resto, seja iniciando uma nova coleta ou recuperando dados de uma execução anterior com falha.
 
 </details>
+
+---
+
+## 🛠️ Scripts Utilitarios
+
+A pasta utils/ contém scripts para administrar, fazer backup e etc no banco de dados.
+
+<details> <summary><code>utils/init_db.py</code></summary> <strong>O que faz:</strong> Script para (re)criar todo o banco de dados. Ele lê e executa automaticamente todos os arquivos <code>.sql</code> da pasta <code>utils/migrations/</code> em ordem alfabética. </details>
+
+<details> <summary><code>utils/export_schema.py</code></summary> <strong>O que faz:</strong> Script para versionamento de banco. Ele se conecta ao banco, lê a estrutura "ao vivo" de todas as tabelas e procedures listadas nele, e sobrescreve os arquivos <code>.sql</code> na pasta <code>utils/migrations/</code>. <strong>Fluxo de trabalho:</strong> 1. Altere a tabela no banco (ex: DBeaver) -> 2. Rode <code>python utils\export_schema.py</code> -> 3. Faça o commit da mudança no arquivo <code>.sql</code>. </details>
+
+<details> <summary><code>utils/executor_silver.py</code></summary> <strong>O que faz:</strong> Executa manualmente a procedure <code>proc_atualiza_silver_menorPreco_notas</code>. Útil para forçar a atualização dos dados da camada Silver (transformação Bronze -> Silver) sem ter que rodar o pipeline de coleta (<code>main.py</code>) inteiro. </details>
 
 ---
 
@@ -206,17 +221,26 @@ O script cuidará do resto, seja iniciando uma nova coleta ou recuperando dados 
 
 <details> <summary>🚦 <strong>main.py</strong></summary> Ponto de entrada. Orquestra os fluxos (normal vs. recuperação) e a etapa de Carga (Load). </details>
 
-<details> <summary>🏃‍♂️ <strong>flow.py</strong></summary> Contém a lógica de negócio principal para <code>run_normal_flow</code> (Extração e Transformação) e <code>run_recovery_flow</code> (Carga de CSVs). </details>
+<details> <summary>▶️ <strong>mp_feeder.bat</strong></summary> Atalho para executar o <code>main.py</code> no Windows, ativando o <code>venv</code> automaticamente. </details>
 
-<details> <summary>🗃️ <strong>db_manager.py</strong></summary> Abstrai toda a comunicação com o banco de dados MariaDB. Contém todas as queries SQL (SELECTs e INSERTs). </details>
+<details> <summary>🗃️ <strong>MP_Feeder/</strong></summary> Pasta com toda a lógica de negócio principal do ETL (Extração, Transformação e Carga).  
+    <ul> 
+        <li><code>flow.py</code>: Contém a lógica principal (<code>run_normal_flow</code>, <code>run_recovery_flow</code>).</li> 
+        <li><code>db_manager.py</code>: Abstrai toda a comunicação com o MariaDB (SELECTs, INSERTs).</li> 
+        <li><code>api_services.py</code>: Gerencia chamadas para APIs externas (Nota Paraná, Google, Telegram).
+        </li> <li><code>etl_utils.py</code>: Funções auxiliares (Pandas, gerenciamento de índice).</li> 
+        <li><code>error_handler.py</code>: Funções centralizadas para lidar com exceções e salvar CSVs.</li> 
+    </ul>
+</details>
 
-<details> <summary>☁️ <strong>api_services.py</strong></summary> Gerencia todas as chamadas para APIs externas (Nota Paraná, Google Geocoding e Telegram). </details>
-
-<details> <summary>🛠️ <strong>etl_utils.py</strong></summary> Funções auxiliares de transformação de dados (Pandas), gerenciamento de estado (leitura/escrita do <code>ultimo_indice.txt</code>) e configuração de logging. </details>
-
-<details> <summary>🚨 <strong>error_handler.py</strong></summary> Funções centralizadas para lidar com exceções, salvar CSVs e notificar falhas. </details>
-
-<details> <summary>🏗️ <strong>init_db.py</strong></summary> Script de inicialização. Garante que as tabelas de destino (bronze_menorPreco_*) existam no banco de dados com o esquema e collate corretos. </details>
+<details> <summary>🏗️ <strong>utils/</strong></summary> Pasta com scripts de utilidade e manutenção do banco.  
+    <ul> 
+        <li><code>init_db.py</code>: Script para (re)criar o banco a partir dos arquivos de migração.</li> 
+        <li><code>export_schema.py</code>: Script para salvar o schema atual do banco nos arquivos de migração.</li> 
+        <li><code>executor_silver.py</code>: Script para rodar manualmente a procedure da camada Silver.</li> 
+        <li><code>migrations/</code>: Pasta contendo todos os arquivos <code>.sql</code> que definem a estrutura (schema) do banco.</li> 
+    </ul>
+</details>
 
 <details> <summary>🔒 <strong>config.py (e .example)</strong></summary> Armazena as credenciais e chaves de API. </details>
 

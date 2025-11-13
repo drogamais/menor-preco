@@ -169,113 +169,124 @@ def _preparar_saida(notas, lojas_sem_cadastro):
         
     return Notas, Lojas_SC
 
-# --- SERVIÇO 2: GOOGLE GEOCODING ---
+# --- SERVIÇO 2: NOMINATIM GEOCODING ---
 
-def _obter_lat_lon_google(endereco, index, total, GOOGLE_API_KEY):
+def _obter_lat_lon_nominatim(endereco, index, total):
     """
-    Função auxiliar privada. Busca a coordenada de UM endereço.
-    Recebe a GOOGLE_API_KEY como parâmetro.
+    Função auxiliar privada. Busca a coordenada de UM endereço usando Nominatim (OpenStreetMap).
+    Não requer chave de API.
     """
-    url = "https://maps.googleapis.com/maps/api/geocode/json"
+
+    url = "https://nominatim.openstreetmap.org/search"
     params = {
-        "address": endereco,
-        "key": GOOGLE_API_KEY,
+        "q": endereco,
+        "format": "jsonv2",
+        "addressdetails": 1,
+        "limit": 1,
     }
+    headers = {"User-Agent": "mp-feeder/1.0 (contato@seudominio.com)"}
 
     try:
-        resposta = requests.get(url, params=params, timeout=20)
-        status_code = resposta.status_code 
+        resposta = requests.get(url, params=params, headers=headers, timeout=20)
+        status_code = resposta.status_code
 
         if status_code != 200:
             logging.error(f"{index+1}/{total} - {endereco} - ERRO HTTP: {status_code}")
             return None, None
 
         dados = resposta.json()
-        json_status = dados.get("status")
-
-        if json_status == "OK" and dados.get("results"):
-            latitude = dados["results"][0]["geometry"]["location"]["lat"]
-            longitude = dados["results"][0]["geometry"]["location"]["lng"]
+        if isinstance(dados, list) and len(dados) > 0:
+            item = dados[0]
+            latitude = item.get("lat")
+            longitude = item.get("lon")
+            display_name = item.get("display_name")
 
             logging.info(
-                f"{index+1}/{total} - {endereco} - {json_status} - LAT. e LONG. encontrados"
+                f"{index+1}/{total} - {endereco} - SUCESSO - LAT: {latitude}, LON: {longitude}"
             )
             return latitude, longitude
-        
-        elif json_status == "ZERO_RESULTS":
-            logging.warning(
-                f"{index+1}/{total} - {endereco} - {json_status} - Endereço não encontrado pela API"
-            )
-            return None, None
-        
-        elif json_status == "REQUEST_DENIED":
-            logging.critical(
-                f"{index+1}/{total} - {endereco} - {json_status} - CHAVE DA API GOOGLE INVÁLIDA."
-            )
-            return None, None
-
-        elif json_status == "OVER_QUERY_LIMIT":
-            logging.error(
-                f"{index+1}/{total} - {endereco} - {json_status} - Limite de quota da API Google atingido."
-            )
-            return None, None
-
         else:
-            logging.error(
-                f"{index+1}/{total} - {endereco} - ERRO API GOOGLE: {json_status}"
-            )
+            logging.warning(f"{index+1}/{total} - {endereco} - Não encontrado no Nominatim")
             return None, None
 
     except requests.RequestException as e:
-        logging.error(f"{index+1}/{total} - {endereco} - ERRO de Rede/Timeout - {e}")
+        logging.error(f"{index+1}/{total} - {endereco} - ERRO de rede/timeout - {e}")
         return None, None
 
 
-def buscar_lat_lon_lojas_sc(Lojas_SC, GOOGLE_API_KEY):
+def buscar_lat_lon_lojas_sc_nominatim(Lojas_SC):
     """
-    Recebe um DataFrame de lojas novas e a API Key, retorna o DataFrame com lat/lon.
+    Versão sem Google. Usa Nominatim (gratuito e sem chave) para buscar coordenadas.
     """
-    print("##### BUSCANDO LATITUDE E LONGITUDE DE LOJAS NÃO CADASTRADAS #####")
-    logging.info("##### BUSCANDO LATITUDE E LONGITUDE DE LOJAS NÃO CADASTRADAS #####")
-    
-    LIMITE_DIARIO_GEOCODING = 50
-    
+
+    print("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
+    logging.info("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
+
+    LIMITE_DIARIO_GEOCODING = 100  # respeite o uso público
     total_encontradas = len(Lojas_SC)
-    
+
     if total_encontradas > LIMITE_DIARIO_GEOCODING:
-        print(f"##### ⚠️ ATENÇÃO: {total_encontradas} lojas novas encontradas. EXCEDEU O LIMITE DIÁRIO DE {LIMITE_DIARIO_GEOCODING}. #####")
-        print(f"##### Processando apenas as primeiras {LIMITE_DIARIO_GEOCODING}. O restante será processado na próxima execução. #####")
-        logging.warning(f"Limite de geocoding atingido. Processando {LIMITE_DIARIO_GEOCODING} de {total_encontradas} lojas novas.")
-        
+        print(f"⚠️ Limitando para {LIMITE_DIARIO_GEOCODING} lojas/dia (limite ético Nominatim).")
         Lojas_SC = Lojas_SC.sample(n=LIMITE_DIARIO_GEOCODING).copy()
-        
+
     elif Lojas_SC.empty:
         print("##### NENHUMA LOJA NOVA PARA BUSCAR LAT/LON. #####")
         logging.info("##### NENHUMA LOJA NOVA PARA BUSCAR LAT/LON. #####")
         return Lojas_SC
 
-    # --- CORREÇÃO DA LÓGICA DE EXECUÇÃO PARALELA ---
     total_lojas = len(Lojas_SC)
     latitudes = []
     longitudes = []
     tarefas = []
-    
-    # Cria a lista de tarefas, passando a API Key para cada uma
-    for row in Lojas_SC.itertuples():
-        tarefas.append((row.endereco, row.Index, total_lojas, GOOGLE_API_KEY))
 
-    print(f"Iniciando busca paralela de {total_lojas} endereços (1 threads)...")
+    # monta tarefas
+    for row in Lojas_SC.itertuples():
+        # Padroniza endereço para evitar confusões
+        endereco_limpo = limpar_endereco_para_nominatim(row.endereco)
+
+        tarefas.append((endereco_limpo, row.Index, total_lojas))
+
+    print(f"Iniciando busca paralela de {total_lojas} endereços...")
     with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
-        # Mapeia as tarefas para a função auxiliar _obter_lat_lon_google
-        for lat, lon in executor.map(lambda p: _obter_lat_lon_google(*p), tarefas):
+        for lat, lon in executor.map(lambda p: _obter_lat_lon_nominatim(*p), tarefas):
             latitudes.append(lat)
             longitudes.append(lon)
+            time.sleep(1.1)  # respeitar limite de 1 req/s no Nominatim
 
     Lojas_SC["Latitude"] = latitudes
     Lojas_SC["Longitude"] = longitudes
 
-    print("✅ Busca concluída!")
+    print("✅ Busca concluída (Nominatim)!")
     return Lojas_SC
+
+
+def limpar_endereco_para_nominatim(endereco: str) -> str:
+    if not endereco:
+        return ""
+
+    e = endereco.upper().strip()
+
+    # Remove "(MUNICÍPIO ...)" e parênteses soltos
+    e = e.replace("(MUNICÍPIO", "")
+    e = e.replace("MUNICIPIO", "")
+    e = e.replace(")", "")
+
+    # Remove múltiplos espaços
+    while "  " in e:
+        e = e.replace("  ", " ")
+
+    # Garante que termina com ", PR, BRASIL"
+    if "PR" not in e.split(",")[-2:]:
+        if not e.endswith("PR"):
+            e = e.rstrip(", ") + ", PR"
+    if "BRASIL" not in e:
+        e = e.rstrip(", ") + ", BRASIL"
+
+    # Remove possíveis duplicações de vírgula
+    e = e.replace(",,", ",").replace(", ,", ", ").strip(" ,")
+
+    return e
+
 
 # --- SERVIÇO 3: TELEGRAM ---
 def mandarMSG(message, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID):
