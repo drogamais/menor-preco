@@ -1,0 +1,32 @@
+name: mp-feeder-project
+prefect-version: 3.0 # Ou a sua versão
+
+# Define como o código é encontrado pelo worker
+pull:
+- prefect.deployments.steps.git_clone:
+    repository: https://github.com/seu-usuario/seu-repo.git
+    branch: main
+    # ATENÇÃO: Você precisa colocar seu código no GitHub/GitLab
+    # Se o worker for rodar na mesma máquina, você pode usar:
+    # directory: C:\caminho\para\seu\projeto\menor-preco...
+    # Mas o Git é a forma correta para um servidor dedicado.
+
+# Define o(s) flow(s) deste projeto
+deployments:
+- name: mp-feeder-etl-diario
+  version: 1.0
+  tags:
+  - etl
+  - producao
+  description: Roda o ETL do Menor Preço (1 lote por execução)
+  
+  # Define a agenda (ex: a cada 15 minutos)
+  schedule:
+    interval: 900 # 900 segundos = 15 minutos
+    
+  # Aponta para o SEU NOVO arquivo de flow
+  entrypoint: mp_feeder_flow.py:mp_feeder_flow
+  
+  # Define o pool de workers que executará este flow
+  work_pool:
+    name: default-agent-pool
