@@ -31,4 +31,4 @@ CREATE TABLE IF NOT EXISTS `bronze_plugpharma_produtos` (
   `data_insercao` datetime DEFAULT NULL,
   KEY `idx_cod_barras_norm` (`codigo_barras_normalizado`),
   KEY `idx_cod_interno` (`codigo_interno`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;

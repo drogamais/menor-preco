@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS `bronze_menorPreco_lojas` (
   `logradouro` varchar(100) DEFAULT NULL,
   `latitude` decimal(10,8) DEFAULT NULL,
   `longitude` decimal(10,8) DEFAULT NULL,
+  `cidade` varchar(50) DEFAULT NULL,
   `geohash` varchar(10) DEFAULT NULL,
   `data_atualizacao` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `bandeira` varchar(100) DEFAULT 'OUTRAS BANDEIRAS',
