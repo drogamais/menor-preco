@@ -1,5 +1,8 @@
 import json
 from prefect.blocks.system import Secret
+from prefect.flows import flow # (Seu import de 'flow' estava no lugar errado)
+from prefect.tasks import task # (Seu import de 'task' estava no lugar errado)
+from prefect import get_run_logger # (Seu import de 'get_run_logger' estava no lugar errado)
 
 @task
 def load_credentials():
