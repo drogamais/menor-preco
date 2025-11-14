@@ -1,5 +1,4 @@
 import pandas as pd
-import json
 from datetime import datetime, timezone, timedelta
 
 # --- Imports do Prefect ---
@@ -33,15 +32,13 @@ def load_credentials():
     logger = get_run_logger()
     logger.info("Carregando credenciais dos Blocks...")
 
-    # Carrega o DB_CONFIG (como texto) e o converte para JSON
-    db_config_text = Secret.load("db-config-mp").get()
-    db_config = json.loads(db_config_text) 
+    # O Bloco Secret já retorna um dicionário!
+    db_config = Secret.load("db-config-mp").get()
 
-    # Carrega o NOVO bloco de Telegram
-    telegram_config_text = Secret.load("telegram-config").get()
-    telegram_config = json.loads(telegram_config_text)
+    # O Bloco Secret já retorna um dicionário!
+    telegram_config = Secret.load("telegram-config").get()
     
-    # Extrai os valores do JSON
+    # Extrai os valores do dicionário
     telegram_token = telegram_config.get("token")
     telegram_chat_id = telegram_config.get("chat_id")
 
@@ -128,9 +125,8 @@ def on_failure_notification(flow, flow_run, state):
     msg = f"❌ FALHA no flow '{flow_run.name}'. Erro: {state.message}"
     logger.error(msg)
     try:
-        # Carrega os segredos do NOVO bloco
-        telegram_config_text = Secret.load("telegram-config").get()
-        telegram_config = json.loads(telegram_config_text)
+        # Carrega os segredos do NOVO bloco (já como dicionário)
+        telegram_config = Secret.load("telegram-config").get()
         token = telegram_config.get("token")
         chat_id = telegram_config.get("chat_id")
         
