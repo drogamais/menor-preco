@@ -14,7 +14,8 @@ deployments:
   - producao
   description: Roda o ETL do Menor Preco (1 lote por execucao)
   schedule:
-    interval: 3600
+    cron: "0 5 * * *"
+    timezone: "America/Sao_Paulo"
   entrypoint: mp_feeder_flow.py:mp_feeder_flow
   work_pool:
     name: etl-agent-pool

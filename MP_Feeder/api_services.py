@@ -15,7 +15,6 @@ def buscar_notas(Consultas, Lojas):
     """
     logger = get_run_logger()
     logger.info("##### COLETANDO NOTAS #####")
-    logger.info("##### COLETANDO NOTAS #####")
 
     url = "https://menorpreco.notaparana.pr.gov.br/api/v1/produtos"
     notas = []
@@ -83,12 +82,10 @@ def buscar_notas(Consultas, Lojas):
                             "local": produto.get("local", ""),
                         })
                 
-                logger.info(f"{i}/{total_consultas} - {ean} - 200 (Encontrados: {num_produtos})")
                 logger.info(f"{i}/{total_consultas} - {ean} - 200 - Encontrados: {num_produtos}")
 
             elif status_code == 204:
                 erros_consecutivos = 0
-                logger.info(f"{i}/{total_consultas} - {ean} - 204 (Sem dados)")
                 logger.info(f"{i}/{total_consultas} - {ean} - 204 - Sem dados")
 
             elif status_code in (404, 401, 403):
@@ -97,7 +94,7 @@ def buscar_notas(Consultas, Lojas):
             
             elif 400 <= status_code < 500:
                 logger.info(f"❌ Erro de CLIENTE ({status_code}) para GTIN {ean}. PULANDO...")
-                logging.warning(f"{i}/{total_consultas} - {ean} - {status_code} - Erro de cliente.")
+                logger.warning(f"{i}/{total_consultas} - {ean} - {status_code} - Erro de cliente.")
             
             elif 500 <= status_code < 600:
                 raise Exception(f"⚠️ Erro no servidor ({status_code})")
@@ -106,7 +103,7 @@ def buscar_notas(Consultas, Lojas):
 
         except Exception as e:
             logger.info(f"❌ Erro na requisição: {e}. PULANDO...")
-            logging.error(f"Erro na requisição: {e}")
+            logger.error(f"Erro na requisição: {e}")
             
             erros_consecutivos += 1
             if erros_consecutivos >= LIMITE_ERROS_CONSECUTIVOS:
@@ -158,7 +155,6 @@ def _obter_lat_lon_nominatim(endereco, index, total):
 
 def buscar_lat_lon_lojas_sc_nominatim(Lojas_SC):
     logger = get_run_logger()
-    logger.info("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
     logger.info("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
 
     if Lojas_SC.empty: return Lojas_SC
