@@ -23,6 +23,8 @@ from MP_Feeder.etl_utils import (
     gerar_consultas,
 )
 
+from utils.executor_silver import (rodar_procedure_silver)
+
 # --- 1. TASK DE CREDENCIAIS ---
 # Esta é a task que substitui o config.py
 @task
@@ -116,6 +118,17 @@ def buscar_lat_lon_task(Lojas_SC_geral_sem_duplicatas):
 def mandarMSG_task(message, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID):
     mandarMSG(message, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID)
 
+# --- NOVA TASK: EXECUTAR PROCEDURE SILVER ---
+@task(retries=1, retry_delay_seconds=300)
+def rodar_procedure_silver_task(DB_CONFIG):
+    """
+    Executa a procedure 'proc_atualiza_silver_menorPreco_notas'.
+    (Assume que utils/executor_silver.py foi adaptado ou usa as credenciais passadas).
+    """
+    # A função rodar_procedure_silver() no executor_silver.py deve ser modificada 
+    # para aceitar DB_CONFIG e usá-lo, em vez de depender do antigo config.py.
+    return rodar_procedure_silver(DB_CONFIG)
+
 
 # --- 3. NOTIFICADOR DE FALHA ---
 def on_failure_notification(flow, flow_run, state):
@@ -129,7 +142,7 @@ def on_failure_notification(flow, flow_run, state):
         token = telegram_config.get("token")
         chat_id = telegram_config.get("chat_id")
         
-        mandarMSG.fn(msg, token, chat_id)
+        mandarMSG(msg, token, chat_id)
     except Exception as e:
         logger.error(f"Falha ao enviar notificação de falha: {e}")
 
@@ -230,6 +243,12 @@ def mp_feeder_flow():
     else:
         logger.info("##### NENHUMA NOTA NOVA ENCONTRADA PARA CARGA. #####")
 
+    ##############################################################
+    ### X ETAPA FINAL: SILVER ETL 
+    logger.info("##### INICIANDO ETAPA SILVER (PROCEDURE) #####")
+    rodar_procedure_silver_task(DB_CONFIG)
+    ##################################################################
+    
     # --- Lógica de SUCESSO ---
     
     if run_completo:
@@ -240,5 +259,4 @@ def mp_feeder_flow():
         logger.warning("Run da API 'buscar_notas' foi parcial (circuit breaker).")
 
 if __name__ == "__main__":
-    # Permite executar o flow localmente para teste
     mp_feeder_flow()

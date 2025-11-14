@@ -13,7 +13,7 @@ except ImportError:
     print("❌ ERRO: 'config.py' não encontrado na pasta raiz do projeto.")
     sys.exit(1)
 
-def rodar_procedure_silver():
+def rodar_procedure_silver(DB_CONFIG):
     """
     Conecta ao banco e executa a procedure
     'proc_atualiza_silver_menorPreco_notas'.
