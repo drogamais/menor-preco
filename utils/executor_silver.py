@@ -1,17 +1,6 @@
 # executar_silver.py
 import mariadb
-import sys
-import os
 import time
-
-# Encontra o arquivo config.py
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, PROJECT_ROOT)
-try:
-    from config import DB_CONFIG
-except ImportError:
-    print("❌ ERRO: 'config.py' não encontrado na pasta raiz do projeto.")
-    sys.exit(1)
 
 def rodar_procedure_silver(DB_CONFIG):
     """
