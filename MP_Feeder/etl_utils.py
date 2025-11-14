@@ -10,9 +10,7 @@ def setup_logging():
         os.makedirs(log_dir)
     agora = datetime.now().strftime("%Y%m%d_%H%M%S")
     logging.basicConfig(
-        filename=os.path.join(log_dir, f"requests-{agora}.log"),
-        level=logging.INFO,
-        format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO
     )
 
 # ============================================

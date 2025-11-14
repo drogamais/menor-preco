@@ -21,7 +21,6 @@ from MP_Feeder.etl_utils import (
     transformar_dados_produtos,
     grupo_eans_selecionados, # Usando a nova versão sem arquivo
     gerar_consultas,
-    setup_logging
 )
 
 # --- 1. TASK DE CREDENCIAIS ---
@@ -144,7 +143,6 @@ def mp_feeder_flow():
     de 100 GTINs, do começo ao fim, com tolerância a falhas.
     """
     logger = get_run_logger()
-    setup_logging() # Configura o log em arquivo (opcional, mas bom)
 
     # --- PASSO 1: CARREGAR CREDENCIAIS ---
     DB_CONFIG, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID = load_credentials()

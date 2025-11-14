@@ -4,6 +4,7 @@ import pandas as pd
 import logging
 import time
 import concurrent.futures
+from prefect import get_run_logger
 
 # --- SERVIÇO 1: NOTA PARANÁ (MENOR PREÇO) ---
 
@@ -12,8 +13,9 @@ def buscar_notas(Consultas, Lojas):
     Busca as notas fiscais na API do Menor Preço.
     Refatorado para Prefect: Não salva estado, não manda Telegram, apenas retorna dados.
     """
-    print("##### COLETANDO NOTAS #####")
-    logging.info("##### COLETANDO NOTAS #####")
+    logger = get_run_logger()
+    logger.info("##### COLETANDO NOTAS #####")
+    logger.info("##### COLETANDO NOTAS #####")
 
     url = "https://menorpreco.notaparana.pr.gov.br/api/v1/produtos"
     notas = []
@@ -30,7 +32,7 @@ def buscar_notas(Consultas, Lojas):
     total_consultas = len(Consultas)
 
     if total_consultas == 0:
-        print("##### NENHUMA CONSULTA NESTE LOTE. #####")
+        logger.info("##### NENHUMA CONSULTA NESTE LOTE. #####")
         return pd.DataFrame(), pd.DataFrame(), True
 
     for i, (_, row) in enumerate(Consultas.iterrows(), start=1):
@@ -81,20 +83,20 @@ def buscar_notas(Consultas, Lojas):
                             "local": produto.get("local", ""),
                         })
                 
-                print(f"{i}/{total_consultas} - {ean} - 200 (Encontrados: {num_produtos})")
-                logging.info(f"{i}/{total_consultas} - {ean} - 200 - Encontrados: {num_produtos}")
+                logger.info(f"{i}/{total_consultas} - {ean} - 200 (Encontrados: {num_produtos})")
+                logger.info(f"{i}/{total_consultas} - {ean} - 200 - Encontrados: {num_produtos}")
 
             elif status_code == 204:
                 erros_consecutivos = 0
-                print(f"{i}/{total_consultas} - {ean} - 204 (Sem dados)")
-                logging.info(f"{i}/{total_consultas} - {ean} - 204 - Sem dados")
+                logger.info(f"{i}/{total_consultas} - {ean} - 204 (Sem dados)")
+                logger.info(f"{i}/{total_consultas} - {ean} - 204 - Sem dados")
 
             elif status_code in (404, 401, 403):
                 # Erros críticos lançam exceção para o Prefect pegar e alertar
                 raise Exception(f"ERRO FATAL API MENOR PREÇO: {status_code}")
             
             elif 400 <= status_code < 500:
-                print(f"❌ Erro de CLIENTE ({status_code}) para GTIN {ean}. PULANDO...")
+                logger.info(f"❌ Erro de CLIENTE ({status_code}) para GTIN {ean}. PULANDO...")
                 logging.warning(f"{i}/{total_consultas} - {ean} - {status_code} - Erro de cliente.")
             
             elif 500 <= status_code < 600:
@@ -103,18 +105,18 @@ def buscar_notas(Consultas, Lojas):
                 raise Exception(f"⚠️ Status code inesperado ({status_code}) para {ean}")
 
         except Exception as e:
-            print(f"❌ Erro na requisição: {e}. PULANDO...")
+            logger.info(f"❌ Erro na requisição: {e}. PULANDO...")
             logging.error(f"Erro na requisição: {e}")
             
             erros_consecutivos += 1
             if erros_consecutivos >= LIMITE_ERROS_CONSECUTIVOS:
-                print(f"❌ LIMITE DE ERROS CONSECUTIVOS ({LIMITE_ERROS_CONSECUTIVOS}) ATINGIDO.")
+                logger.info(f"❌ LIMITE DE ERROS CONSECUTIVOS ({LIMITE_ERROS_CONSECUTIVOS}) ATINGIDO.")
                 # Retorna o que pegou até agora, mas marca como incompleto
                 run_completo = False 
                 break 
             continue 
     
-    print("##### PREPARANDO DADOS COLETADOS... #####")
+    logger.info("##### PREPARANDO DADOS COLETADOS... #####")
     Notas_df, Lojas_SC_df = _preparar_saida(notas, lojas_sem_cadastro)
     
     # Retorna APENAS dados e status. O Prefect lida com o resto.
@@ -155,8 +157,9 @@ def _obter_lat_lon_nominatim(endereco, index, total):
         return None, None
 
 def buscar_lat_lon_lojas_sc_nominatim(Lojas_SC):
-    print("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
-    logging.info("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
+    logger = get_run_logger()
+    logger.info("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
+    logger.info("##### BUSCANDO LATITUDE E LONGITUDE (NOMINATIM) #####")
 
     if Lojas_SC.empty: return Lojas_SC
 
@@ -192,9 +195,10 @@ def limpar_endereco_para_nominatim(endereco: str) -> str:
 
 # --- SERVIÇO 3: TELEGRAM (Mantido para uso no Flow) ---
 def mandarMSG(message, TELEGRAM_TOKEN, TELEGRAM_CHAT_ID):
+    logger = get_run_logger()
     if not TELEGRAM_TOKEN or not TELEGRAM_CHAT_ID: return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
     try:
         requests.get(url, params={"chat_id": TELEGRAM_CHAT_ID, "text": message}, timeout=10)
     except Exception as e:
-        print(f"Erro ao enviar Telegram: {e}")
+        logger.info(f"Erro ao enviar Telegram: {e}")
