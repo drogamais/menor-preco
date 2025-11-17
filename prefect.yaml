@@ -5,6 +5,13 @@ pull:
   - prefect.deployments.steps.git_clone:
       repository: https://github.com/drogamais/menor-preco.git
       branch: prefect_test
+      
+  # ADICIONE ISTO:
+  # Instala as dependências em um venv temporário
+  - prefect.deployments.steps.pip_install_requirements:
+      requirements_file: requirements.txt 
+      # (Opcional, mas bom: usa o venv do agente para criar o venv)
+      stream_output: true 
 
 deployments:
 - name: mp-feeder-etl-diario
@@ -23,7 +30,9 @@ deployments:
   work_pool:
     name: etl-agent-pool
 
-  runtime:
-    type: subprocess
-    config:
-      python: "C:/Automacao/menor-preco/venv/Scripts/python.exe"
+  # REMOVA O 'runtime:' INTEIRO.
+  # O Prefect agora gerencia o ambiente automaticamente
+  # runtime:
+  #   type: subprocess
+  #   config:
+  #     python: "C:/Automacao/menor-preco/venv/Scripts/python.exe"
