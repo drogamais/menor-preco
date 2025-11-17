@@ -6,12 +6,7 @@ pull:
       repository: https://github.com/drogamais/menor-preco.git
       branch: prefect_test
 
-build:
-  - prefect.deployments.steps.run_shell_script:
-      script: |
-        python -m venv venv
-        venv/Scripts/python.exe -m pip install --upgrade pip wheel
-        venv/Scripts/python.exe -m pip install -r requirements.txt
+build: []   # <---- IMPORTANTE: não cria venv aqui
 
 deployments:
   - name: mp-feeder-etl-diario
@@ -26,10 +21,8 @@ deployments:
     entrypoint: mp_feeder_flow.py:mp_feeder_flow
     work_pool:
       name: etl-agent-pool
-
+    
     runtime:
       type: subprocess
       config:
         python: "./venv/Scripts/python.exe"
-        env:
-          PYTHONUTF8: "1"
