@@ -12,22 +12,8 @@ build:
   # PASSO 1: Cria o ambiente virtual .venv
   # ----------------------------------------------------
   - prefect.deployments.steps.run_shell_script:
-      script: "python -m venv .venv"
-      
-  # ----------------------------------------------------
-  # PASSO 2: Atualiza o PIP dentro do .venv
-  # (Usando o python.exe que acabou de ser criado)
-  # ----------------------------------------------------
-  - prefect.deployments.steps.run_shell_script:
-      script: ".venv\\Scripts\\python.exe -m pip install --upgrade pip wheel"
-      
-  # ----------------------------------------------------
-  # PASSO 3: Instala as bibliotecas (pandas, etc.) 
-  # DENTRO do .venv
-  # ----------------------------------------------------
-  - prefect.deployments.steps.run_shell_script:
-      script: ".venv\\Scripts\\python.exe -m pip install -r requirements.txt"
-      
+    script: "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install --upgrade pip wheel && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+
 deployments:
 - name: mp-feeder-etl-diario
   version: null
