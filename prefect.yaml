@@ -25,7 +25,7 @@ deployments:
     cron: "0 5 * * *"
     timezone: "America/Sao_Paulo"
 
-  entrypoint: mp_feeder_flow.py:mp_feeder_flow
+  entrypoint: menor-preco-prefect_test/mp_feeder_flow.py:mp_feeder_flow
 
   work_pool:
     name: etl-agent-pool
