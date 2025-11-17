@@ -19,8 +19,3 @@ deployments:
   entrypoint: mp_feeder_flow.py:mp_feeder_flow
   work_pool:
     name: etl-agent-pool
-  
-  runtime:
-    type: subprocess
-    config:
-      python: "./venv/Scripts/python.exe"
