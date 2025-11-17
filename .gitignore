@@ -3,6 +3,7 @@ config.py
 __pycache__
 ultimo_indice.txt
 venv
+.venv
 lojas_parciais.csv
 notas_parciais.csv
 COLUNAS CALCULADAS COMPARADOR DE PR.txt

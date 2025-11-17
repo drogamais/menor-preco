@@ -10,7 +10,7 @@ pull:
 build:
   # Comando 1: Cria um venv chamado 'venv' dentro da pasta clonada
   - prefect.deployments.steps.run_shell_script:
-      script: "python -m venv venv"
+      script: "python -m venv .venv"
 
   # Comando 2: Ativa o venv recém-criado e instala as libs
   - prefect.deployments.steps.run_shell_script:
@@ -34,4 +34,4 @@ deployments:
     type: subprocess
     config:
       # Agora este caminho funciona, porque o 'build' acabou de criar
-      python: "./venv/Scripts/python.exe"
+      python: "./.venv/Scripts/python.exe"
