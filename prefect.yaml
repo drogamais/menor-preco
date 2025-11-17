@@ -24,6 +24,3 @@ deployments:
     type: subprocess
     config:
       python: "./venv/Scripts/python.exe"
-      env:
-        PYTHONIOENCODING: "utf-8"
-        PYTHONLEGACYWINDOWSFSENCODING: "utf-8"
