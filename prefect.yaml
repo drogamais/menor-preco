@@ -8,7 +8,6 @@ pull:
 
 build:
   - prefect.deployments.steps.run_shell_script:
-      shell: "cmd"
       script: |
         python -m venv venv
         venv/Scripts/python.exe -m pip install --upgrade pip wheel
