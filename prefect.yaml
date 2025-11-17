@@ -2,7 +2,7 @@ name: mp-feeder-project
 prefect-version: 3.6.1
 
 # ----------------------------------------------------
-# ⬇️ CORREÇÃO 1: Bloco 'pull' em sintaxe longa ⬇️
+# ⬇ CORREÇÃO 1: Bloco 'pull' em sintaxe longa ⬇
 # ----------------------------------------------------
 pull:
   - step: prefect.deployments.steps.git_clone
@@ -11,7 +11,7 @@ pull:
       branch: prefect_test
 
 # ----------------------------------------------------
-# ⬇️ CORREÇÃO 2: Bloco 'build' em sintaxe longa ⬇️
+# ⬇ CORREÇÃO 2: Bloco 'build' em sintaxe longa ⬇
 # ----------------------------------------------------
 build:
   - step: prefect.deployments.steps.run_shell_script
@@ -20,7 +20,7 @@ build:
       script: "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install --upgrade pip wheel && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
 
 # ----------------------------------------------------
-# ⬆️ Fim das correções ⬆️
+# ⬆ Fim das correções ⬆
 # ----------------------------------------------------
 
 deployments:
