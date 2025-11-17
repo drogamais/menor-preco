@@ -12,6 +12,7 @@ build:
   # PASSO 1: Cria o ambiente virtual .venv
   # ----------------------------------------------------
   - prefect.deployments.steps.run_shell_script:
+    shell: "cmd"
     script: "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install --upgrade pip wheel && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
 
 deployments:
