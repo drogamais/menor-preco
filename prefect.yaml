@@ -6,18 +6,18 @@ prefect-version: 3.6.1
 # ----------------------------------------------------
 pull:
   - step: prefect.deployments.steps.git_clone
-    inputs:
-      repository: https://github.com/drogamais/menor-preco.git
-      branch: prefect_test
+    # O 'inputs:' foi removido, as chaves estão no mesmo nível
+    repository: https://github.com/drogamais/menor-preco.git
+    branch: prefect_test
 
 # ----------------------------------------------------
 # ⬇ CORREÇÃO 2: Bloco 'build' em sintaxe longa ⬇
 # ----------------------------------------------------
 build:
   - step: prefect.deployments.steps.run_shell_script
-    inputs:
-      shell: "cmd"
-      script: "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install --upgrade pip wheel && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+    # O 'inputs:' foi removido, as chaves estão no mesmo nível
+    shell: "cmd"
+    script: "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install --upgrade pip wheel && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
 
 # ----------------------------------------------------
 # ⬆ Fim das correções ⬆
