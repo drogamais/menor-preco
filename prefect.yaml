@@ -14,7 +14,7 @@ build:
 
   # Comando 2: Ativa o venv recém-criado e instala as libs
   - prefect.deployments.steps.run_shell_script:
-      script: "venv\\Scripts\\activate && pip install -r requirements.txt"
+      script: ".venv\\Scripts\\activate && python -m pip install --upgrade pip wheel && pip install -r requirements.txt"
 
 deployments:
 - name: mp-feeder-etl-diario
@@ -35,3 +35,5 @@ deployments:
     config:
       # Agora este caminho funciona, porque o 'build' acabou de criar
       python: "./.venv/Scripts/python.exe"
+      env:
+        PYTHONUTF8: "1"
