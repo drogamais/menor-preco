@@ -1,46 +1,36 @@
 name: mp-feeder-project
 prefect-version: 3.6.2
 
-# ----------------------------------------------------
-# ⬇ Bloco 'pull' ⬇
-# ----------------------------------------------------
 pull:
-  - step: prefect.deployments.steps.git_clone
-    repository: https://github.com/drogamais/menor-preco.git
-    branch: prefect_test
+  - prefect.deployments.steps.git_clone:
+      repository: https://github.com/drogamais/menor-preco.git
+      branch: prefect_test
 
-# ----------------------------------------------------
-# ⬇ Bloco 'build' (LIMPO) ⬇
-# ----------------------------------------------------
 build:
-  - step: prefect.deployments.steps.run_shell_script
-    shell: "cmd"
-    script: |
-      python -m venv venv
-      venv/Scripts/python.exe -m pip install --upgrade pip wheel
-      venv/Scripts/python.exe -m pip install -r requirements.txt
-
-# ----------------------------------------------------
-# ⬆ Fim das correções ⬆
-# ----------------------------------------------------
+  - prefect.deployments.steps.run_shell_script:
+      shell: "cmd"
+      script: |
+        python -m venv venv
+        venv/Scripts/python.exe -m pip install --upgrade pip wheel
+        venv/Scripts/python.exe -m pip install -r requirements.txt
 
 deployments:
-- name: mp-feeder-etl-diario
-  version: null
-  tags:
-  - etl
-  - producao
-  description: Roda o ETL do Menor Preco (1 lote por execucao)
-  schedule:
-    cron: "0 5 * * *"
-    timezone: "America/Sao_Paulo"
-  entrypoint: mp_feeder_flow.py:mp_feeder_flow
-  work_pool:
-    name: etl-agent-pool
-  
-  runtime:
-    type: subprocess
-    config:
-      python: "./venv/Scripts/python.exe"
-      env:
-        PYTHONUTF8: "1"
+  - name: mp-feeder-etl-diario
+    version: null
+    tags:
+      - etl
+      - producao
+    description: Roda o ETL do Menor Preco (1 lote por execucao)
+    schedule:
+      cron: "0 5 * * *"
+      timezone: "America/Sao_Paulo"
+    entrypoint: mp_feeder_flow.py:mp_feeder_flow
+    work_pool:
+      name: etl-agent-pool
+
+    runtime:
+      type: subprocess
+      config:
+        python: "./venv/Scripts/python.exe"
+        env:
+          PYTHONUTF8: "1"
