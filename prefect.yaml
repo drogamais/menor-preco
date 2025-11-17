@@ -1,28 +1,29 @@
 name: mp-feeder-project
-prefect-version: 3.6.2
+prefect-version: 3.6.1
 
 pull:
   - prefect.deployments.steps.git_clone:
       repository: https://github.com/drogamais/menor-preco.git
       branch: prefect_test
 
-build: []   # <---- IMPORTANTE: não cria venv aqui
-
 deployments:
-  - name: mp-feeder-etl-diario
-    version: null
-    tags:
-      - etl
-      - producao
-    description: Roda o ETL do Menor Preco (1 lote por execucao)
-    schedule:
-      cron: "0 5 * * *"
-      timezone: "America/Sao_Paulo"
-    entrypoint: mp_feeder_flow.py:mp_feeder_flow
-    work_pool:
-      name: etl-agent-pool
-    
-    runtime:
-      type: subprocess
-      config:
-        python: "./venv/Scripts/python.exe"
+- name: mp-feeder-etl-diario
+  version: null
+  tags:
+    - etl
+    - producao
+  description: Roda o ETL do Menor Preço (1 lote por execucao)
+
+  schedule:
+    cron: "0 5 * * *"
+    timezone: "America/Sao_Paulo"
+
+  entrypoint: mp_feeder_flow.py:mp_feeder_flow
+
+  work_pool:
+    name: etl-agent-pool
+
+  runtime:
+    type: subprocess
+    config:
+      python: "C:/Automacao/menor-preco/venv/Scripts/python.exe"
