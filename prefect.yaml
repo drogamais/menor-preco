@@ -1,23 +1,25 @@
 name: mp-feeder-project
-prefect-version: 3.6.1
+prefect-version: 3.6.2
 
 # ----------------------------------------------------
-# ⬇ CORREÇÃO 1: Bloco 'pull' em sintaxe longa ⬇
+# ⬇ Bloco 'pull' (Corrigido) ⬇
 # ----------------------------------------------------
 pull:
   - step: prefect.deployments.steps.git_clone
-    # O 'inputs:' foi removido, as chaves estão no mesmo nível
     repository: https://github.com/drogamais/menor-preco.git
     branch: prefect_test
 
 # ----------------------------------------------------
-# ⬇ CORREÇÃO 2: Bloco 'build' em sintaxe longa ⬇
+# ⬇ Bloco 'build' (Formatado) ⬇
 # ----------------------------------------------------
 build:
   - step: prefect.deployments.steps.run_shell_script
-    # O 'inputs:' foi removido, as chaves estão no mesmo nível
     shell: "cmd"
-    script: "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install --upgrade pip wheel && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+    # MUDANÇA AQUI: Usando o "|" para formatar o script
+    script: |
+      python -m venv venv
+      venv\\Scripts\\python.exe -m pip install --upgrade pip wheel
+      venv\\Scripts\\python.exe -m pip install -r requirements.txt
 
 # ----------------------------------------------------
 # ⬆ Fim das correções ⬆
@@ -40,7 +42,4 @@ deployments:
   runtime:
     type: subprocess
     config:
-      # Agora este caminho funciona, porque o 'build' acabou de criar
-      python: "./.venv/Scripts/python.exe"
-      env:
-        PYTHONUTF8: "1"
+      python: "./venv/Scripts/python.exe"
