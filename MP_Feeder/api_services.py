@@ -93,21 +93,21 @@ def buscar_notas(Consultas, Lojas):
                 raise Exception(f"ERRO FATAL API MENOR PREÇO: {status_code}")
             
             elif 400 <= status_code < 500:
-                logger.info(f"❌ Erro de CLIENTE ({status_code}) para GTIN {ean}. PULANDO...")
+                logger.info(f" Erro de CLIENTE ({status_code}) para GTIN {ean}. PULANDO...")
                 logger.warning(f"{i}/{total_consultas} - {ean} - {status_code} - Erro de cliente.")
             
             elif 500 <= status_code < 600:
-                raise Exception(f"⚠️ Erro no servidor ({status_code})")
+                raise Exception(f" Erro no servidor ({status_code})")
             else:
-                raise Exception(f"⚠️ Status code inesperado ({status_code}) para {ean}")
+                raise Exception(f" Status code inesperado ({status_code}) para {ean}")
 
         except Exception as e:
-            logger.info(f"❌ Erro na requisição: {e}. PULANDO...")
+            logger.info(f" Erro na requisição: {e}. PULANDO...")
             logger.error(f"Erro na requisição: {e}")
             
             erros_consecutivos += 1
             if erros_consecutivos >= LIMITE_ERROS_CONSECUTIVOS:
-                logger.info(f"❌ LIMITE DE ERROS CONSECUTIVOS ({LIMITE_ERROS_CONSECUTIVOS}) ATINGIDO.")
+                logger.info(f" LIMITE DE ERROS CONSECUTIVOS ({LIMITE_ERROS_CONSECUTIVOS}) ATINGIDO.")
                 # Retorna o que pegou até agora, mas marca como incompleto
                 run_completo = False 
                 break 
