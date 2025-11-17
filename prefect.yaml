@@ -6,6 +6,16 @@ pull:
     repository: https://github.com/drogamais/menor-preco.git
     branch: prefect_test
 
+# Este bloco roda DEPOIS do 'pull' e ANTES do 'runtime'
+build:
+  # Comando 1: Cria um venv chamado 'venv' dentro da pasta clonada
+  - prefect.deployments.steps.run_shell_script:
+      script: "python -m venv venv"
+
+  # Comando 2: Ativa o venv recém-criado e instala as libs
+  - prefect.deployments.steps.run_shell_script:
+      script: "venv\\Scripts\\activate && pip install -r requirements.txt"
+
 deployments:
 - name: mp-feeder-etl-diario
   version: null
@@ -23,4 +33,5 @@ deployments:
   runtime:
     type: subprocess
     config:
+      # Agora este caminho funciona, porque o 'build' acabou de criar
       python: "./venv/Scripts/python.exe"
