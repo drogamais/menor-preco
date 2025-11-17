@@ -38,17 +38,20 @@ def rodar_procedure_silver(DB_CONFIG):
         end_time = time.time()
 
         print("\n" + "="*50)
-        print(f"✅ SUCESSO! Procedure '{procedure_name}' concluída.")
+        # CORREÇÃO: Removido emoji ✅
+        print(f"[SUCESSO] Procedure '{procedure_name}' concluída.") 
         print(f"   Tempo total de execução: {end_time - start_time:.2f} segundos.")
         print("="*50)
 
     except mariadb.Error as e:
-        print(f"❌ Erro de Banco de Dados: {e}")
+        # CORREÇÃO: Removido emoji ❌
+        print(f"[FALHA] Erro de Banco de Dados: {e}")
         if conn:
             print("Executando rollback...")
             conn.rollback() # Desfaz alterações em caso de erro
     except Exception as e:
-        print(f"❌ Erro inesperado: {e}")
+        # CORREÇÃO: Removido emoji ❌
+        print(f"[FALHA] Erro inesperado: {e}")
     finally:
         # 4. Fechar tudo
         if cursor:
@@ -59,4 +62,6 @@ def rodar_procedure_silver(DB_CONFIG):
 
 # --- Ponto de entrada do script ---
 if __name__ == "__main__":
-    rodar_procedure_silver()
+    # Esta chamada deve ser removida ou receber DB_CONFIG se este script for rodado isoladamente
+    # Por enquanto, mantemos apenas a definição da função.
+    pass
