@@ -245,8 +245,10 @@ def mp_feeder_flow():
 
     ##############################################################
     ### X ETAPA FINAL: SILVER ETL 
-    logger.info("##### INICIANDO ETAPA SILVER (PROCEDURE) #####")
-    rodar_procedure_silver_task(DB_CONFIG)
+
+    # logger.info("##### INICIANDO ETAPA SILVER (PROCEDURE) #####")
+    # rodar_procedure_silver_task(DB_CONFIG)
+    
     ##################################################################
     
     # --- Lógica de SUCESSO ---
