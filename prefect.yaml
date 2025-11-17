@@ -26,4 +26,4 @@ deployments:
       python: "./venv/Scripts/python.exe"
       env:
         PYTHONIOENCODING: "utf-8"
-        PYTHONLEGACYWINDOWSFSENCODING: "utf-8
+        PYTHONLEGACYWINDOWSFSENCODING: "utf-8"
