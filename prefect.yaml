@@ -1,22 +1,27 @@
 name: mp-feeder-project
 prefect-version: 3.6.1
 
+# ----------------------------------------------------
+# ⬇️ CORREÇÃO 1: Bloco 'pull' em sintaxe longa ⬇️
+# ----------------------------------------------------
 pull:
-- prefect.deployments.steps.git_clone:
-    repository: https://github.com/drogamais/menor-preco.git
-    branch: prefect_test
+  - step: prefect.deployments.steps.git_clone
+    inputs:
+      repository: https://github.com/drogamais/menor-preco.git
+      branch: prefect_test
 
-# Este bloco roda DEPOIS do 'pull' e ANTES do 'runtime'
+# ----------------------------------------------------
+# ⬇️ CORREÇÃO 2: Bloco 'build' em sintaxe longa ⬇️
+# ----------------------------------------------------
 build:
-  # ----------------------------------------------------
-  # PASSO 1: Cria o ambiente virtual .venv
-  # ----------------------------------------------------
-  build:
-  # O '-' indica o início de um passo (step)
   - step: prefect.deployments.steps.run_shell_script
     inputs:
       shell: "cmd"
       script: "python -m venv .venv && .venv\\Scripts\\python.exe -m pip install --upgrade pip wheel && .venv\\Scripts\\python.exe -m pip install -r requirements.txt"
+
+# ----------------------------------------------------
+# ⬆️ Fim das correções ⬆️
+# ----------------------------------------------------
 
 deployments:
 - name: mp-feeder-etl-diario
