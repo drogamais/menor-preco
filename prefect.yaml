@@ -10,12 +10,11 @@ pull:
     branch: prefect_test
 
 # ----------------------------------------------------
-# ⬇ Bloco 'build' (Formatado com /) ⬇
+# ⬇ Bloco 'build' (LIMPO) ⬇
 # ----------------------------------------------------
 build:
   - step: prefect.deployments.steps.run_shell_script
     shell: "cmd"
-    # MUDANÇA AQUI: Usando / para os caminhos
     script: |
       python -m venv venv
       venv/Scripts/python.exe -m pip install --upgrade pip wheel
@@ -42,7 +41,6 @@ deployments:
   runtime:
     type: subprocess
     config:
-      # MUDANÇA AQUI: Usando / para os caminhos
       python: "./venv/Scripts/python.exe"
       env:
         PYTHONUTF8: "1"
