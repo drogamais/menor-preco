@@ -1,15 +1,6 @@
 name: mp-feeder-project
 prefect-version: 3.6.1
 
-# 1. REMOVA O 'pull:' INTEIRO. 
-#    Estamos assumindo que o código já está no servidor.
-#
-# pull:
-#   - prefect.deployments.steps.git_clone:
-#       ...
-#   - prefect.deployments.steps.pip_install_requirements:
-#       ...
-
 deployments:
 - name: mp-feeder-etl-diario
   version: null
@@ -22,20 +13,17 @@ deployments:
     cron: "0 5 * * *"
     timezone: "America/Sao_Paulo"
 
-  # 2. O entrypoint é relativo ao 'cwd'
+  job_variables:
+    env:
+      PYTHONUTF8: "1"
+
   entrypoint: mp_feeder_flow.py:mp_feeder_flow
 
   work_pool:
     name: etl-agent-pool
 
-  # 3. O 'runtime:' é a chave
   runtime:
     type: subprocess
     config:
-      # O 'cwd' (current working directory) diz ao processo
-      # ONDE ele deve rodar.
       cwd: C:\Automacao\menor-preco\menor-preco
-      
-      # O 'python' aponta para o venv que já 
-      # tem o pandas, mariadb, etc., instalados.
       python: C:\Automacao\menor-preco\venv\Scripts\python.exe
