@@ -1,6 +1,17 @@
 name: mp-feeder-project
 prefect-version: 3.6.1
 
+# --- NOVA SEÇÃO PULL ---
+# Isso roda ANTES do fluxo começar, toda vez que o schedule disparar.
+pull:
+  - prefect.deployments.steps.run_shell_script:
+      id: atualizar-codigo
+      # O comando git -C executa o git na pasta especificada sem precisar de 'cd'
+      script: |
+        git -C C:\Automacao\menor-preco\menor-preco pull origin main
+      stream_output: true
+
+# --- SEUS DEPLOYMENTS ---
 deployments:
 - name: mp-feeder-etl-diario
   version: null
@@ -25,5 +36,6 @@ deployments:
   runtime:
     type: subprocess
     config:
+      # Mantemos o CWD fixo para que ele ache o 'ultimo_indice.txt' sempre no mesmo lugar
       cwd: C:\Automacao\menor-preco\menor-preco
       python: C:\Automacao\menor-preco\venv\Scripts\python.exe

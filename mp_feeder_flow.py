@@ -50,7 +50,7 @@ def load_credentials():
 # Todas as funções que usam credenciais agora as recebem como parâmetros.
 
 # --- Tasks do db_manager.py ---
-@task(cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1))
+@task
 def pegar_ultima_att_gtins_task(DB_CONFIG):
     return pegar_ultima_att_gtins(DB_CONFIG)
 
@@ -66,7 +66,7 @@ def insert_produtos_atualizados_task(DB_CONFIG, produtos_df):
 def pegar_geohashs_task(DB_CONFIG):
     return pegar_geohashs_BD(DB_CONFIG)
 
-@task(cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1), refresh_cache=True)
+@task
 def coletar_produtos_no_banco_task(DB_CONFIG):
     return coletar_produtos_no_banco(DB_CONFIG)
 
