@@ -1,15 +1,14 @@
 name: mp-feeder-project
 prefect-version: 3.6.1
 
-# --- NOVA SEÇÃO PULL ---
-# Isso roda ANTES do fluxo começar, toda vez que o schedule disparar.
+# --- SEÇÃO PULL: USANDO GIT CLONE ---
 pull:
-  - prefect.deployments.steps.run_shell_script:
-      id: atualizar-codigo
-      # O comando git -C executa o git na pasta especificada sem precisar de 'cd'
-      script: |
-        git -C C:\Automacao\menor-preco pull origin prefect_test
-      stream_output: true
+  - prefect.deployments.steps.git_clone:
+      # COLOQUE AQUI A URL HTTPS DO SEU REPOSITÓRIO (ex: github.com/usuario/repo.git)
+      repository: https://github.com/drogamais/menor-preco.git
+      branch: prefect_test
+      # Puxa o token do bloco Secret que você criou no passo 1
+      access_token: "{{ prefect.blocks.secret.github-token }}"
 
 # --- SEUS DEPLOYMENTS ---
 deployments:
@@ -28,6 +27,7 @@ deployments:
     env:
       PYTHONUTF8: "1"
 
+  # O entrypoint é relativo à raiz do repositório clonado
   entrypoint: mp_feeder_flow.py:mp_feeder_flow
 
   work_pool:
@@ -36,6 +36,7 @@ deployments:
   runtime:
     type: subprocess
     config:
-      # Mantemos o CWD fixo para que ele ache o 'ultimo_indice.txt' sempre no mesmo lugar
-      cwd: C:\Automacao\menor-preco\menor-preco
+      # IMPORTANTE: Removi o 'cwd'. O Prefect rodará na pasta clonada automaticamente.
+      
+      # Mantemos o Python fixo do seu ambiente virtual (isso não muda)
       python: C:\Automacao\menor-preco\venv\Scripts\python.exe
