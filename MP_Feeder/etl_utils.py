@@ -33,13 +33,13 @@ def transformar_dados_produtos(produtos_por_valor, produtos_por_qtd):
 
 def grupo_eans_selecionados(EANs, ult_gtin):
     """
-    Seleciona o PRÓXIMO grupo de 100 produtos baseado no último GTIN processado.
+    Seleciona o PRÓXIMO grupo de 200 produtos baseado no último GTIN processado.
     Refatorado para Prefect: Não lê arquivos locais.
     """
     logging.info("##### SELECIONANDO GRUPO DE GTINS #####")
 
-    produtos_por_grupo = 100
-    # Divide em grupos de 100
+    produtos_por_grupo = 200
+    # Divide em grupos de 200
     grupos = [
         EANs.iloc[i : i + produtos_por_grupo]
         for i in range(0, len(EANs), produtos_por_grupo)
