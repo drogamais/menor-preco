@@ -66,7 +66,7 @@ def insert_produtos_atualizados_task(DB_CONFIG, produtos_df):
 def pegar_geohashs_task(DB_CONFIG):
     return pegar_geohashs_BD(DB_CONFIG)
 
-@task(cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1))
+@task(cache_key_fn=task_input_hash, cache_expiration=timedelta(days=1), refresh_cache=True)
 def coletar_produtos_no_banco_task(DB_CONFIG):
     return coletar_produtos_no_banco(DB_CONFIG)
 
