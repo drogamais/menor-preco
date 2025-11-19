@@ -76,7 +76,7 @@ def fetch_dados_vendas_para_produtos(DB_CONFIG):
         GROUP BY 
             v.codigo_interno_produto
         ORDER BY valor_total DESC
-        LIMIT 2000;
+        LIMIT 3000;
     """
     cursor.execute(sql_valor)
     resultados = cursor.fetchall()
@@ -100,7 +100,7 @@ def fetch_dados_vendas_para_produtos(DB_CONFIG):
         GROUP BY 
             v.codigo_interno_produto
         ORDER BY qtd_total DESC
-        LIMIT 2000;
+        LIMIT 3000;
     """
     cursor.execute(sql_qtd)
     resultados = cursor.fetchall()

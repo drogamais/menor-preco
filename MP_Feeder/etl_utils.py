@@ -86,7 +86,7 @@ def transformar_dados_produtos(produtos_por_valor, produtos_por_qtd):
     Produtos.drop_duplicates(subset=['GTIN'], keep='first', inplace=True)
     
     # 3. AGORA sim, pega os 1000 melhores da lista limpa.
-    Produtos = Produtos.head(1000)
+    Produtos = Produtos.head(1500)
     
     print(f"Transformação concluída. Enviando {len(Produtos)} produtos únicos para carga.")
     logging.info(f"Transformação concluída. Enviando {len(Produtos)} produtos únicos para carga.")
@@ -100,7 +100,7 @@ def grupo_eans_selecionados(EANs, ult_gtin, arquivo_indice):
     """
     logging.info("##### SELECIONANDO GRUPO DE GTINS #####")
 
-    produtos_por_grupo = 100
+    produtos_por_grupo = 200
     grupos = [
         EANs.iloc[i : i + produtos_por_grupo]
         for i in range(0, len(EANs), produtos_por_grupo)
