@@ -46,7 +46,7 @@ BEGIN
         valor_tabela DECIMAL(10,2) NULL,
         cidade VARCHAR(50) NULL,           -- <-- Armazenará a cidade LIMPA
         microrregiao VARCHAR(100) NULL, -- <-- NOVA COLUNA
-        data_atualizacao DATE NULL,
+        data_atualizacao DATETIME NULL,
         PRIMARY KEY (id_nota),
         INDEX idx_gtin (gtin),
         INDEX idx_id_loja (id_loja),
@@ -223,7 +223,7 @@ BEGIN
 	    n.valor_desconto,
 	    n.valor_tabela,
 	    n.cidade,
-	    n.data_atualizacao,
+	    NOW(),
 	    l.bandeira,
 	    l.latitude,
 	    l.longitude,

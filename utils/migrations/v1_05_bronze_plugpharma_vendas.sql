@@ -75,5 +75,6 @@ CREATE TABLE IF NOT EXISTS `bronze_plugpharma_vendas` (
   KEY `idx_data_venda` (`data_venda`),
   KEY `idx_cnpj_loja` (`cnpj_loja`),
   KEY `idx_gtin` (`GTIN`),
-  KEY `idx_codigo_interno_produto` (`codigo_interno_produto`)
+  KEY `idx_codigo_interno_produto` (`codigo_interno_produto`),
+  KEY `idx_cobertura_vendas_silver` (`data_venda`,`cnpj_loja`,`codigo_de_barras_normalizado_produto`,`codigo_interno_produto`,`GTIN`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
