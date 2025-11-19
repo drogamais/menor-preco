@@ -29,7 +29,7 @@ def transformar_dados_produtos(produtos_por_valor, produtos_por_qtd):
     Produtos["GTIN"] = Produtos["GTIN"].astype(str)
     Produtos.drop_duplicates(subset=['GTIN'], keep='first', inplace=True)
     
-    return Produtos.head(1000)
+    return Produtos.head(1500)
 
 def grupo_eans_selecionados(EANs, ult_gtin):
     """
