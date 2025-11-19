@@ -8,7 +8,7 @@ pull:
       id: atualizar-codigo
       # O comando git -C executa o git na pasta especificada sem precisar de 'cd'
       script: |
-        git -C C:\Automacao\menor-preco\menor-preco pull origin main
+        git -C C:\Automacao\menor-preco pull origin prefect_test
       stream_output: true
 
 # --- SEUS DEPLOYMENTS ---
