@@ -424,9 +424,11 @@ def inserir_notas(Notas, now_obj, DB_CONFIG):
         ))
 
     sql = """
-        INSERT IGNORE INTO bronze_menorPreco_notas 
+        INSERT INTO bronze_menorPreco_notas 
         (id_nota, date, id_loja, geohash, gtin, descricao, valor_desconto, valor_tabela, valor, cidade, data_atualizacao)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        ON DUPLICATE KEY UPDATE
+            data_atualizacao = VALUES(data_atualizacao);
     """
 
     try:
