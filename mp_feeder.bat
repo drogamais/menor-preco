@@ -1,20 +1,21 @@
 @echo off
-ECHO ===================================================
-ECHO  ATIVANDO O AMBIENTE VIRTUAL (venv)...
-ECHO ===================================================
+TITLE Automacao Comparador de Preco
 
-:: 1. Ativa o ambiente virtual.
-CALL .\venv\Scripts\activate
+REM Muda o diretório para a pasta onde o .bat está localizado
+cd /d "%~dp0"
 
-ECHO.
-ECHO ===================================================
-ECHO  INICIANDO O SCRIPT main.py...
-ECHO ===================================================
+echo.
+echo Ativando o ambiente virtual...
+echo.
 
-:: 2. Executa o script principal do Python
+REM Ativa o ambiente virtual
+call venv\Scripts\activate
+
+echo Ambiente ativado. Iniciando a aplicacao...
+echo.
+
+REM Executa o script principal do Python
 python main.py
 
-ECHO.
-ECHO ===================================================
-ECHO  EXECUCAO CONCLUIDA
-ECHO ===================================================
+echo.
+echo A aplicacao foi fechada.
