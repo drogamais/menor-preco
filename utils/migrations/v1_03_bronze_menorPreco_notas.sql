@@ -1,6 +1,6 @@
 -- Definição da tabela: bronze_menorPreco_notas
 CREATE TABLE IF NOT EXISTS `bronze_menorPreco_notas` (
-  `id` bigint(20) NOT NULL DEFAULT 0,
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
   `id_nota` varchar(120) NOT NULL,
   `date` datetime DEFAULT NULL,
   `id_loja` varchar(50) DEFAULT NULL,
