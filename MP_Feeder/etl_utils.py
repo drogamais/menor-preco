@@ -79,14 +79,14 @@ def transformar_dados_produtos(produtos_por_valor, produtos_por_qtd):
     
     # 1. Normaliza os GTINs para 14 dígitos (como string)
     #    Removemos .0 se vier de um número
-    Produtos["GTIN"] = Produtos["GTIN"].astype(str)
+    Produtos["GTIN"] = Produtos["GTIN"].astype(str).str.zfill(14)
     
     # 2. Dededuplica pela CHAVE PRIMÁRIA (GTIN) PRIMEIRO.
     #    Isso garante que só temos 1 de cada gtin na lista.
     Produtos.drop_duplicates(subset=['GTIN'], keep='first', inplace=True)
     
     # 3. AGORA sim, pega os 1000 melhores da lista limpa.
-    Produtos = Produtos.head(1500)
+    Produtos = Produtos.head(1600)
     
     print(f"Transformação concluída. Enviando {len(Produtos)} produtos únicos para carga.")
     logging.info(f"Transformação concluída. Enviando {len(Produtos)} produtos únicos para carga.")
