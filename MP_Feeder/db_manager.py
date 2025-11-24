@@ -295,14 +295,15 @@ def pegar_geohashs_BD(DB_CONFIG):
 
 def coletar_lojas_do_banco(DB_CONFIG):
     """
-    Coleta a lista de TODOS os IDs de lojas já cadastrados no banco.
+    Coleta a lista de IDs de lojas já cadastrados E que possuem coordenadas completas.
     """
-    print("##### COLETANDO LOJAS CADASTRADAS NO BANCO (NOSSAS LOJAS) #####")
-    logging.info("##### COLETANDO LOJAS CADASTRADAS NO BANCO (NOSSAS LOJAS) #####")
+    print("##### COLETANDO LOJAS CADASTRADAS NO BANCO (COM COORDENADAS) #####")
+    logging.info("##### COLETANDO LOJAS CADASTRADAS NO BANCO (COM COORDENADAS) #####")
 
     conn = _conectar_db(DB_CONFIG)
     cursor = conn.cursor()
-    sql = "SELECT id_loja FROM bronze_menorPreco_lojas" # Tabela correta
+
+    sql = "SELECT id_loja FROM bronze_menorPreco_lojas WHERE latitude IS NOT NULL AND longitude IS NOT NULL"
     
     cursor.execute(sql)
     lista_lojas = cursor.fetchall()
@@ -327,7 +328,7 @@ def inserir_lojas_sc(Lojas_SC, now_obj, DB_CONFIG):
 
     conn = _conectar_db(DB_CONFIG)
     cursor = conn.cursor()
-    Lojas_SC = Lojas_SC.where(pd.notnull(Lojas_SC), None) 
+    Lojas_SC = Lojas_SC.astype(object).where(pd.notnull(Lojas_SC), None)
 
     data_tuples = [
         (
@@ -344,6 +345,9 @@ def inserir_lojas_sc(Lojas_SC, now_obj, DB_CONFIG):
         (id_loja, nome_fantasia, razao_social, logradouro, latitude, longitude, cidade, geohash, data_atualizacao)
         VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         ON DUPLICATE KEY UPDATE
+            latitude = VALUES(latitude),
+            longitude = VALUES(longitude),
+            geohash = VALUES(geohash),
             data_atualizacao = VALUES(data_atualizacao);
     """
 
