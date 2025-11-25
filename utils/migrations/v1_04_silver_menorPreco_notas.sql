@@ -1,12 +1,11 @@
 -- Definição da tabela: silver_menorPreco_notas
 CREATE TABLE IF NOT EXISTS `silver_menorPreco_notas` (
+  `sk_nota` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `id_nota` varchar(150) NOT NULL,
   `date` datetime DEFAULT NULL,
   `id_loja` varchar(50) DEFAULT NULL,
   `geohash` varchar(12) DEFAULT NULL,
-  `id_produto` varchar(20) DEFAULT NULL,
   `gtin` varchar(14) DEFAULT NULL,
-  `descricao` varchar(120) DEFAULT NULL,
   `valor` decimal(10,2) DEFAULT NULL,
   `valor_desconto` decimal(10,2) DEFAULT NULL,
   `valor_tabela` decimal(10,2) DEFAULT NULL,
@@ -20,15 +19,12 @@ CREATE TABLE IF NOT EXISTS `silver_menorPreco_notas` (
   `PRODUTO` varchar(255) DEFAULT NULL,
   `microrregiao` varchar(100) DEFAULT NULL,
   `DateRelacionamento` date DEFAULT NULL,
-  `media_gtin` decimal(10,4) DEFAULT NULL,
-  `media_cidade_gtin` decimal(10,4) DEFAULT NULL,
   `rank_cidade` int(11) DEFAULT NULL,
   `rank_microrregiao` int(11) DEFAULT NULL,
   `considerado` varchar(2) DEFAULT NULL,
-  PRIMARY KEY (`id_nota`),
-  KEY `idx_silver_gtin` (`gtin`),
-  KEY `idx_silver_id_loja` (`id_loja`),
-  KEY `idx_silver_bandeira` (`bandeira`),
+  PRIMARY KEY (`sk_nota`),
+  UNIQUE KEY `idx_unique_id_nota` (`id_nota`),
   KEY `idx_silver_cidade` (`cidade`),
-  KEY `idx_silver_data` (`DateRelacionamento`)
+  KEY `idx_silver_data` (`DateRelacionamento`),
+  KEY `idx_silver_produto` (`PRODUTO`(50))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
