@@ -112,40 +112,33 @@ def run_normal_flow(configs, now_gmt3, today_gmt3):
         # 2. Transformar (Passo 1: Pegar Top 1000 produtos)
         Produtos_top_1000 = transformar_dados_produtos(produtos_por_valor, produtos_por_qtd)
         
-        # 3. Extrair (Passo 2: Buscar GTINs principais para o Top 1000)
+        # 3. Extrair (Passo 2: Buscar GTINs principais e TIPO para o Top 1000)
         if not Produtos_top_1000.empty:
-            codigos_para_buscar = Produtos_top_1000["codigo_interno_produto"].tolist()
-            df_gtins_principais = fetch_gtins_principais(DB_CONFIG, codigos_para_buscar)
+            codigos = Produtos_top_1000["codigo_interno_produto"].tolist()
+            df_extras = fetch_gtins_principais(DB_CONFIG, codigos)
 
-            # 4. Transformar (Passo 2: Atualizar GTINs)
-            if not df_gtins_principais.empty:
-                # Junta os GTINs principais ao DF original
-                Produtos_atualizados_merge = pd.merge(
-                    Produtos_top_1000, 
-                    df_gtins_principais, 
-                    on='codigo_interno_produto', 
-                    how='left'
+            if not df_extras.empty:
+                # Merge para trazer GTIN novo e TIPO
+                Produtos_atualizados = pd.merge(
+                    Produtos_top_1000, df_extras, 
+                    on='codigo_interno_produto', how='left'
                 )
                 
-                # Substitui o GTIN antigo pelo principal, se o principal foi encontrado
-                # Se 'GTIN_principal' for NaN, mantém o 'GTIN' original
-                Produtos_atualizados_merge['GTIN'] = Produtos_atualizados_merge['GTIN_principal'].fillna(
-                    Produtos_atualizados_merge['GTIN']
-                )
+                # Prioriza GTIN principal
+                Produtos_atualizados['GTIN'] = Produtos_atualizados['GTIN_principal'].fillna(Produtos_atualizados['GTIN'])
                 
-                # Limpa o DF final, removendo a coluna auxiliar
-                Produtos_limpos = Produtos_atualizados_merge.drop(columns=['GTIN_principal'])
+                # Renomeia tipo_produto -> tipo
+                Produtos_atualizados.rename(columns={'tipo_produto': 'tipo'}, inplace=True)
+                
+                # Limpa colunas extras
+                Produtos_limpos = Produtos_atualizados.drop(columns=['GTIN_principal'], errors='ignore')
             else:
-                # Se a busca de GTINs principais falhou ou não retornou nada,
-                # apenas usa a lista original (com GTINs não-principais)
+                
                 Produtos_limpos = Produtos_top_1000
-                print("##### AVISO: Nenhum GTIN principal encontrado. Usando GTINs originais da venda. #####")
-                logging.warning("Nenhum GTIN principal encontrado. Usando GTINs originais da venda.")
-        else:
-            Produtos_limpos = Produtos_top_1000 # DataFrame vazio
-        
-        # 5. Carregar
-        insert_produtos_atualizados(DB_CONFIG, Produtos_limpos)
+                Produtos_limpos['tipo'] = None # Garante a coluna mesmo vazia
+
+            # Envia para o insert (agora incremental)
+            insert_produtos_atualizados(DB_CONFIG, Produtos_limpos)
         
     else:
         print("##### LISTA DE PRODUTOS ATUALIZADA RECENTEMENTE. PULANDO ATUALIZAÇÃO. #####")

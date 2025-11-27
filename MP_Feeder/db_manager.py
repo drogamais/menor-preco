@@ -115,51 +115,41 @@ def fetch_dados_vendas_para_produtos(DB_CONFIG):
 
 def insert_produtos_atualizados(DB_CONFIG, produtos_df):
     """
-    (ETL - Load) Recebe um DataFrame de produtos JÁ TRATADO e 
-    o insere/atualiza no banco.
+    INSERT Incremental: Grava uma nova linha para cada execução.
     """
-    if produtos_df.empty:
-        logging.info("Nenhum produto para atualizar.")
-        return
-        
-    logging.info(f"4. Atualizando {len(produtos_df)} produtos na tabela")
-    
+    if produtos_df.empty: return
+
+    logging.info(f"4. Inserindo {len(produtos_df)} produtos (Incremental)...")
     conn = _conectar_db(DB_CONFIG)
     cursor = conn.cursor()
+    
+    agora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    sql_inserir_produto = """
-        INSERT INTO bronze_menorPreco_produtos (
-            gtin, id_produto, descricao, fabricante, apresentacao
-        )
-        VALUES (%s, %s, %s, %s, %s)
-        ON DUPLICATE KEY UPDATE
-            id_produto = VALUES(id_produto),
-            descricao = VALUES(descricao),
-            fabricante = VALUES(fabricante),
-            apresentacao = VALUES(apresentacao);
+    # INSERT simples, sem 'ON DUPLICATE KEY UPDATE'
+    sql = """
+        INSERT INTO bronze_menorPreco_produtos 
+        (gtin, id_produto, descricao, fabricante, apresentacao, tipo, data_atualizacao)
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
     
-    erros = 0
-    for index, row_data in produtos_df.iterrows():
+    sucessos = 0
+    for _, row in produtos_df.iterrows():
         try:
-            
-            data_produto = (
-                row_data["GTIN"],                     # 1. gtin
-                row_data["codigo_interno_produto"],   # 2. id_produto
-                row_data["descricao_produto"],        # 3. descricao
-                row_data["nome_fantasia_fabricante"], # 4. fabricante
-                row_data["apresentacao_produto"],     # 5. apresentacao
-            )
-            cursor.execute(sql_inserir_produto, data_produto)
-            
+            cursor.execute(sql, (
+                row["GTIN"], 
+                row["codigo_interno_produto"], 
+                row["descricao_produto"], 
+                row["nome_fantasia_fabricante"], 
+                row["apresentacao_produto"],
+                row.get("tipo"), # Pega o tipo vindo do DataFrame
+                agora
+            ))
+            sucessos += 1
         except Exception as e:
-            erros += 1
-            logging.error( 
-                f"FALHA NA ATUALIZAÇÃO DO PRODUTO {row_data['descricao_produto']} de GTIN: {row_data['GTIN']} - ERRO: {e}"
-            )
+            logging.error(f"Erro ao inserir {row['GTIN']}: {e}")
 
     conn.commit()
-    logging.info(f"Commit de {cursor.rowcount} (reportado) atualizações de produtos concluído. Erros: {erros}")
+    logging.info(f"Sucesso: {sucessos} produtos inseridos.")
     cursor.close()
     conn.close()
 
@@ -198,50 +188,33 @@ def coletar_produtos_no_banco(DB_CONFIG):
 
 def fetch_gtins_principais(DB_CONFIG, codigos_internos_list):
     """
-    Busca os GTINs principais (codigo_principal = 1) para uma lista
-    de codigos_internos_produto da tabela bronze_plugpharma_produtos.
+    Busca GTIN principal e agora também o TIPO DE PRODUTO.
     """
     if not codigos_internos_list:
-        logging.info("Nenhum codigo_interno_produto fornecido para buscar GTINs principais.")
-        return pd.DataFrame(columns=["codigo_interno_produto", "GTIN_principal"])
-
-    logging.info(f"Buscando GTIN principal para {len(codigos_internos_list)} códigos internos...")
+        logging.info("Nenhum codigo interno fornecido.")
+        return pd.DataFrame(columns=["codigo_interno_produto", "GTIN_principal", "tipo_produto"])
     
     conn = _conectar_db(DB_CONFIG)
     cursor = conn.cursor()
 
     try:
-        # Cria a string de placeholders (%s, %s, ...)
         placeholders = ', '.join(['%s'] * len(codigos_internos_list))
-        
+        # ADICIONADO: tipo_produto no SELECT
         sql = f"""
-            SELECT 
-                codigo_interno, 
-                codigo_barras 
-            FROM 
-                bronze_plugpharma_produtos 
-            WHERE 
-                codigo_principal = 1 
-                AND codigo_interno IN ({placeholders})
+            SELECT codigo_interno, codigo_barras, tipo_produto
+            FROM bronze_plugpharma_produtos 
+            WHERE codigo_principal = 1 AND codigo_interno IN ({placeholders})
         """
-        
-        # Executa a query com a tupla de códigos
         cursor.execute(sql, tuple(codigos_internos_list))
-        resultados = cursor.fetchall()
         
         columns = [desc[0] for desc in cursor.description]
-        df_gtins_principais = pd.DataFrame(resultados, columns=columns)
+        df = pd.DataFrame(cursor.fetchall(), columns=columns)
         
-        # Renomeia para clareza no merge (usando 'codigo_barras' como origem)
-        df_gtins_principais.rename(columns={'codigo_barras': 'GTIN_principal', 'codigo_interno': 'codigo_interno_produto'}, inplace=True)
-        
-        logging.info(f"Encontrados {len(df_gtins_principais)} GTINs principais.")
-        return df_gtins_principais
+        return df.rename(columns={'codigo_barras': 'GTIN_principal', 'codigo_interno': 'codigo_interno_produto'})
 
     except Exception as e:
-        logging.error(f"Erro ao buscar GTINs principais: {e}", exc_info=True)
-        # Retorna um DF vazio em caso de erro
-        return pd.DataFrame(columns=["codigo_interno_produto", "GTIN_principal"])
+        logging.error(f"Erro ao buscar GTINs: {e}")
+        return pd.DataFrame(columns=["codigo_interno_produto", "GTIN_principal", "tipo_produto"])
     finally:
         cursor.close()
         conn.close()
