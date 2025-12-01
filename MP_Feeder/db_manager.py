@@ -116,6 +116,7 @@ def fetch_dados_vendas_para_produtos(DB_CONFIG):
 def insert_produtos_atualizados(DB_CONFIG, produtos_df):
     """
     INSERT Incremental: Grava uma nova linha para cada execução.
+    Usa 'data_insercao' para fixar a data de criação e compor a PK sem erros futuros.
     """
     if produtos_df.empty: return
 
@@ -125,10 +126,10 @@ def insert_produtos_atualizados(DB_CONFIG, produtos_df):
     
     agora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # INSERT simples, sem 'ON DUPLICATE KEY UPDATE'
+    # MUDANÇA: Usando data_insercao ao invés de data_atualizacao
     sql = """
         INSERT INTO bronze_menorPreco_produtos 
-        (gtin, id_produto, descricao, fabricante, apresentacao, tipo, data_atualizacao)
+        (gtin, id_produto, descricao, fabricante, apresentacao, tipo, data_insercao)
         VALUES (%s, %s, %s, %s, %s, %s, %s)
     """
     
@@ -143,8 +144,8 @@ def insert_produtos_atualizados(DB_CONFIG, produtos_df):
                 row["descricao_produto"], 
                 row["nome_fantasia_fabricante"], 
                 row["apresentacao_produto"],
-                row.get("tipo"), # Pega o tipo vindo do DataFrame
-                agora
+                row.get("tipo"),
+                agora  # Vai para data_insercao
             ))
             sucessos += 1
         except Exception as e:
@@ -221,20 +222,24 @@ def fetch_gtins_principais(DB_CONFIG, codigos_internos_list):
         cursor.close()
         conn.close()
 
-def atualizar_fabricantes_via_iqvia(DB_CONFIG):
+def atualizar_fabricantes_via_iqvia(DB_CONFIG, lista_gtins):
     """
-    Atualiza o campo 'fabricante' na tabela bronze_menorPreco_produtos
-    usando a tabela bronze_iqvia_cpp como fonte prioritária.
-    Mantém o dado original se não houver correspondência no IQVIA.
+    Atualiza o fabricante usando a base IQVIA apenas para os GTINs fornecidos.
     """
-    print("##### 🧬 ENRIQUECENDO FABRICANTES COM BASE IQVIA #####")
-    logging.info("##### ENRIQUECENDO FABRICANTES COM BASE IQVIA #####")
+    if not lista_gtins:
+        logging.info("Nenhum GTIN para atualizar via IQVIA.")
+        return
+
+    print(f"##### 🧬 ENRIQUECENDO {len(lista_gtins)} PRODUTOS COM BASE IQVIA #####")
+    logging.info(f"##### ENRIQUECENDO {len(lista_gtins)} PRODUTOS COM BASE IQVIA #####")
 
     conn = _conectar_db(DB_CONFIG)
     cursor = conn.cursor()
 
-    # O SQL fornecido, ajustado para garantir unicidade no GROUP BY
-    sql = """
+    format_strings = ','.join(['%s'] * len(lista_gtins))
+
+    # MUDANÇA: Referência explicita a data_insercao no SET, conforme solicitado.
+    sql = f"""
     UPDATE bronze_menorPreco_produtos mp
     INNER JOIN (
         SELECT 
@@ -245,14 +250,18 @@ def atualizar_fabricantes_via_iqvia(DB_CONFIG):
         GROUP BY LPAD(EAN, 14, '0')
     ) iq
     ON mp.gtin = iq.gtin_normalizado
-    SET mp.fabricante = iq.fabricante_iqvia
-    WHERE iq.fabricante_iqvia IS NOT NULL 
-      AND iq.fabricante_iqvia <> '';
+    SET 
+        mp.fabricante = iq.fabricante_iqvia,
+        mp.data_insercao = mp.data_insercao
+    WHERE 
+        iq.fabricante_iqvia IS NOT NULL 
+        AND iq.fabricante_iqvia <> ''
+        AND mp.gtin IN ({format_strings});
     """
 
     try:
         start_time = time.time()
-        cursor.execute(sql)
+        cursor.execute(sql, tuple(lista_gtins))
         conn.commit()
         end_time = time.time()
         
