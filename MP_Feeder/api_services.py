@@ -268,24 +268,31 @@ def limpar_endereco_para_nominatim(endereco: str) -> str:
 
     # Remove "(MUNICÍPIO ...)" e parênteses soltos
     e = e.replace("(MUNICÍPIO", "")
+    e = e.replace("(MUNICIPIO", "")
+    e = e.replace("MUNICÍPIO", "")
     e = e.replace("MUNICIPIO", "")
     e = e.replace(")", "")
+    e = e.replace("(", "")
 
     # Remove múltiplos espaços
     while "  " in e:
         e = e.replace("  ", " ")
 
-    # Garante que termina com ", PR, BRASIL"
-    if "PR" not in e.split(",")[-2:]:
-        if not e.endswith("PR"):
-            e = e.rstrip(", ") + ", PR"
-    if "BRASIL" not in e:
-        e = e.rstrip(", ") + ", BRASIL"
+    # Remove sufixos já existentes para recompor corretamente
+    for sufixo in [", BRASIL", "BRASIL", ", PR", "PR"]:
+        if e.endswith(sufixo):
+            e = e[: -len(sufixo)].rstrip(" ,")
+    
+    # Reconstrói o final padronizado
+    e = f"{e}, PR, BRASIL"
 
-    # Remove possíveis duplicações de vírgula
-    e = e.replace(",,", ",").replace(", ,", ", ").strip(" ,")
+    # Trata vírgulas duplicadas
+    while ",," in e:
+        e = e.replace(",,", ",")
+    e = e.replace(", ,", ", ").strip(" ,")
 
     return e
+
 
 
 # --- SERVIÇO 3: TELEGRAM ---
