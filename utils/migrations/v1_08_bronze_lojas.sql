@@ -40,11 +40,14 @@ CREATE TABLE IF NOT EXISTS `bronze_lojas` (
   `farmacia_popular` bit(1) DEFAULT b'0',
   `faturamento_inicial` float(9,2) DEFAULT NULL,
   `polo` varchar(50) DEFAULT NULL,
-  `focal` varchar(50) DEFAULT NULL,
-  `auditor` varchar(50) DEFAULT NULL,
+  `gerentes_regionais` varchar(50) DEFAULT NULL,
+  `atendente` varchar(50) DEFAULT NULL,
+  `analista` varchar(50) DEFAULT NULL,
   `cod_utc` varchar(10) DEFAULT NULL,
   `utc` varchar(50) DEFAULT NULL,
+  `utc_pdvs` int(11) DEFAULT NULL,
   `cod_brick` varchar(10) DEFAULT NULL,
   `brick` varchar(50) DEFAULT NULL,
+  `brick_pdvs` int(11) DEFAULT NULL,
   `ultima_atualizacao` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;

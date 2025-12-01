@@ -23,7 +23,7 @@ def pegar_ultima_att_gtins(DB_CONFIG):
 
     conn = _conectar_db(DB_CONFIG)
     cursor = conn.cursor()
-    sql = "SELECT MAX(data_atualizacao) FROM bronze_menorPreco_produtos"
+    sql = "SELECT MAX(data_insercao) FROM bronze_menorPreco_produtos"
     
     cursor.execute(sql)
     resultado = cursor.fetchone()
@@ -126,7 +126,6 @@ def insert_produtos_atualizados(DB_CONFIG, produtos_df):
     
     agora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    # MUDANÇA: Usando data_insercao ao invés de data_atualizacao
     sql = """
         INSERT INTO bronze_menorPreco_produtos 
         (gtin, id_produto, descricao, fabricante, apresentacao, tipo, data_insercao)
@@ -166,7 +165,7 @@ def coletar_produtos_no_banco(DB_CONFIG):
     conn = _conectar_db(DB_CONFIG)
     cursor = conn.cursor()
 
-    sql_data = "SELECT MAX(data_atualizacao) FROM bronze_menorPreco_produtos"
+    sql_data = "SELECT MAX(data_insercao) FROM bronze_menorPreco_produtos"
     cursor.execute(sql_data)
     maior_data = cursor.fetchone()
     data_obj = maior_data[0] if maior_data else None
@@ -179,7 +178,7 @@ def coletar_produtos_no_banco(DB_CONFIG):
     if isinstance(data_obj, datetime):
         data_obj = data_obj.date()
 
-    sql_gtin = "SELECT gtin FROM bronze_menorPreco_produtos WHERE DATE(data_atualizacao) = %s"
+    sql_gtin = "SELECT gtin FROM bronze_menorPreco_produtos WHERE DATE(data_insercao) = %s"
     cursor.execute(sql_gtin, (data_obj,)) 
     gtins = cursor.fetchall()
     

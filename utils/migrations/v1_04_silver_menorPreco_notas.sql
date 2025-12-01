@@ -26,5 +26,6 @@ CREATE TABLE IF NOT EXISTS `silver_menorPreco_notas` (
   UNIQUE KEY `idx_unique_id_nota` (`id_nota`),
   KEY `idx_silver_cidade` (`cidade`),
   KEY `idx_silver_data` (`DateRelacionamento`),
-  KEY `idx_silver_produto` (`PRODUTO`(50))
+  KEY `idx_silver_gtin` (`gtin`),
+  KEY `idx_produto` (`PRODUTO`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;

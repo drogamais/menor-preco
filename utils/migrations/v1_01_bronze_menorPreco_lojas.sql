@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS `bronze_menorPreco_lojas` (
   `cidade` varchar(50) DEFAULT NULL,
   `geohash` varchar(10) DEFAULT NULL,
   `data_atualizacao` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `bandeira` varchar(100) DEFAULT 'OUTRAS BANDEIRAS',
+  `bandeira` varchar(80) DEFAULT 'OUTRAS BANDEIRAS',
+  `email` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id_loja`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
