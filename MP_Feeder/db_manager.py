@@ -363,7 +363,7 @@ def inserir_lojas_sc(Lojas_SC, now_obj, DB_CONFIG):
             row.id_loja, row.nome_fantasia, row.razao_social, row.logradouro,
             row.Latitude, row.Longitude, 
             row.cidade,
-            row.geohash, now_obj
+            row.geohash
         )
         for row in Lojas_SC.itertuples(index=False)
     ]
@@ -371,12 +371,12 @@ def inserir_lojas_sc(Lojas_SC, now_obj, DB_CONFIG):
     sql = """
         INSERT INTO bronze_menorPreco_lojas
         (id_loja, nome_fantasia, razao_social, logradouro, latitude, longitude, cidade, geohash, data_atualizacao)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, NOW())
         ON DUPLICATE KEY UPDATE
             latitude = VALUES(latitude),
             longitude = VALUES(longitude),
             geohash = VALUES(geohash),
-            data_atualizacao = VALUES(data_atualizacao);
+            data_atualizacao = NOW();
     """
 
     try:
@@ -445,22 +445,21 @@ def inserir_notas(Notas, now_obj, DB_CONFIG):
 
     data_tuples = []
     for row in Notas.itertuples(index=False):
-        # CORREÇÃO DE NORMALIZAÇÃO DE GTIN
         gtin_normalizado = str(row.gtin).zfill(14)
         data_tuples.append((
             row.id_nota, row.datahora, row.id_loja, row.geohash, 
-            gtin_normalizado, # <-- GTIN Normalizado
+            gtin_normalizado,
             row.descricao,
             row.valor_desconto, row.valor_tabela, row.valor, 
-            row.cidade, now_obj
+            row.cidade
         ))
 
     sql = """
         INSERT INTO bronze_menorPreco_notas 
         (id_nota, date, id_loja, geohash, gtin, descricao, valor_desconto, valor_tabela, valor, cidade, data_atualizacao)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, NOW())
         ON DUPLICATE KEY UPDATE
-            data_atualizacao = VALUES(data_atualizacao);
+            data_atualizacao = NOW();
     """
 
     try:
